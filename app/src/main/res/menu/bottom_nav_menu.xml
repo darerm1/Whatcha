@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/navigation_home" android:title="Главная" />
+<!--        android:icon="@drawable/ic_home"-->
+<!--        android:title="Главная" />-->
+    <item
+        android:id="@+id/navigation_favorites" android:title="Избранное" />
+<!--        android:icon="@drawable/ic_favorite"-->
+<!--        android:title="Избранное" />-->
+    <item
+        android:id="@+id/navigation_profile" android:title="Профиль" />
+<!--        android:icon="@drawable/ic_person"-->
+<!--        android:title="Профиль" />-->
+</menu>
