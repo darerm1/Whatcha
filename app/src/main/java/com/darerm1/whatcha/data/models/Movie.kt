@@ -14,7 +14,7 @@ data class Movie(
 
     val description: String,
 
-    val genre: Genre,
+    override val genre: Genre,
 
     val duration: Int,
 
@@ -24,5 +24,5 @@ data class Movie(
 
     override var status: Status = Status.NOT_SET,
 
-    val date: LocalDate? = null
+    override val date: LocalDate? = null
 ): MediaItem

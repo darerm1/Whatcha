@@ -34,6 +34,10 @@ class MovieListService(val movieListRepo: MovieListRepository) {
         return movieListRepo.changeStatus(id, Status.ABANDONED)
     }
 
+    fun markAsNotSet(id: Long) {
+        return movieListRepo.changeStatus(id, Status.NOT_SET)
+    }
+
     fun searchMoviesByName(query: String): List<MediaItem> { 
         return movieListRepo.searchMoviesByName(query)
     }
@@ -58,5 +62,9 @@ class MovieListService(val movieListRepo: MovieListRepository) {
         if (newRating !in 1..10) return Result.Error("Rating must be between 1 and  10")
         if (movieListRepo.findMovieById(id) == null) return Result.Error("Movie not found")
         return if (movieListRepo.updateRating(id, newRating)) Result.Success(Unit) else Result.Error("Failed to update rating")
+    }
+
+    fun getMovies(): List<MediaItem> {
+        return movieListRepo.getMovies()
     }
 }
