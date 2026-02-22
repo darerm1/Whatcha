@@ -7,6 +7,10 @@ import com.darerm1.whatcha.data.enums.Status
 class MovieListRepositoryImpl: MovieListRepository {
     private val movieList = mutableListOf<MediaItem>()
 
+    companion object {
+        val instance: MovieListRepositoryImpl by lazy { MovieListRepositoryImpl() }
+    }
+
     override fun addMovie(movie: MediaItem) {
         movieList.add(movie)
     }

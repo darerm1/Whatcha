@@ -24,5 +24,7 @@ data class Movie(
 
     override var status: Status = Status.NOT_SET,
 
-    override val date: LocalDate? = null
+    override val date: LocalDate? = null,
+
+    override val posterUrl: String? = null
 ): MediaItem
