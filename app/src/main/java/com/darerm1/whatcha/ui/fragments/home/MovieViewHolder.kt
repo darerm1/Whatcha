@@ -36,11 +36,14 @@ class MovieViewHolder(
             binding.ivPoster.load(posterUrl) {
                 placeholder(R.drawable.placeholder_poster)
                 error(R.drawable.placeholder_poster)
-                listener { _, result ->
-                    binding.tvPlaceholder.visibility = 
-                        if (result.isSuccess && posterUrl.isNotBlank()) android.view.View.GONE 
-                        else android.view.View.VISIBLE
-                }
+                listener(
+                    onSuccess = { _, _ ->
+                        binding.tvPlaceholder.visibility = android.view.View.GONE
+                    },
+                    onError = { _, _ ->
+                        binding.tvPlaceholder.visibility = android.view.View.VISIBLE
+                    }
+                )
             }
         }
 

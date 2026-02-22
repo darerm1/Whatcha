@@ -32,6 +32,7 @@ class HomeFragment : Fragment() {
     private var currentQuery = ""
     private var hasMore = true
     private var favoriteIds: Set<Long> = emptySet()
+    private var isExpanded = false
 
     private val debounceHandler = Handler(Looper.getMainLooper())
     private var debounceRunnable: Runnable? = null
@@ -82,6 +83,7 @@ class HomeFragment : Fragment() {
                     currentQuery = newText.orEmpty()
                     currentPage = 1
                     hasMore = true
+                    isExpanded = false
                     movies.clear()
                     adapter.submitList(emptyList())
                     loadMovies()
@@ -94,6 +96,8 @@ class HomeFragment : Fragment() {
 
     private fun setupLoadMoreButton() {
         btnLoadMore?.setOnClickListener {
+            isExpanded = true
+            btnLoadMore?.visibility = View.GONE
             loadMovies()
         }
     }
@@ -140,7 +144,9 @@ class HomeFragment : Fragment() {
 
     private fun updateUi() {
         tvEmpty?.visibility = if (movies.isEmpty()) View.VISIBLE else View.GONE
-        btnLoadMore?.visibility = if (hasMore && movies.isNotEmpty()) View.VISIBLE else View.GONE
+        if (!isExpanded && hasMore && movies.isNotEmpty()) {
+            btnLoadMore?.visibility = View.VISIBLE
+        }
     }
 
     override fun onDestroyView() {

@@ -5,7 +5,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.darerm1.whatcha.R
 import com.darerm1.whatcha.ui.NavigationListener
-import com.darerm1.whatcha.ui.fragments.favorites.FavoritesFragment
+import com.darerm1.whatcha.ui.fragments.PlaceholderFragment
 import com.darerm1.whatcha.ui.fragments.home.HomeFragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
@@ -49,7 +49,7 @@ class MainActivity : AppCompatActivity(), NavigationListener {
 
     override fun openFavorites() {
         supportFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, FavoritesFragment())
+            .replace(R.id.fragment_container, PlaceholderFragment())
             .commit()
     }
 
@@ -59,7 +59,7 @@ class MainActivity : AppCompatActivity(), NavigationListener {
 
     override fun openDetails(movieId: Long) {
         val bundle = Bundle().apply { putLong("movie_id", movieId) }
-        val fragment = FavoritesFragment().apply { arguments = bundle } // DetailFragment instead of FavoritesFragment
+        val fragment = PlaceholderFragment().apply { arguments = bundle }
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, fragment)
             .commit()
