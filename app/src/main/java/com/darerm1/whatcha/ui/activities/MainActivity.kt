@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.darerm1.whatcha.R
 import com.darerm1.whatcha.ui.NavigationListener
 import com.darerm1.whatcha.ui.fragments.favorites.FavoritesFragment
+import com.darerm1.whatcha.ui.fragments.home.HomeFragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class MainActivity : AppCompatActivity(), NavigationListener {
@@ -42,7 +43,7 @@ class MainActivity : AppCompatActivity(), NavigationListener {
 
     override fun openHome() {
         supportFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, FavoritesFragment()) // HomeFragment() instead of FavoritesFragment
+            .replace(R.id.fragment_container, HomeFragment())
             .commit()
     }
 

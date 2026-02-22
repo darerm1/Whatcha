@@ -47,4 +47,5 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     testImplementation("io.mockk:mockk:1.13.8")
+    implementation("io.coil-kt:coil:2.5.0")
 }

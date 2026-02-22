@@ -3,9 +3,15 @@ package com.darerm1.whatcha.infrastructure
 import com.darerm1.whatcha.data.interfaces.MediaItem
 import com.darerm1.whatcha.data.enums.Status
 import com.darerm1.whatcha.data.interfaces.MovieListRepository
+import com.darerm1.whatcha.repositories.MovieListRepositoryImpl
 import com.darerm1.whatcha.utils.Result
 
-class MovieListService(val movieListRepo: MovieListRepository) {
+class MovieListService private constructor(private val movieListRepo: MovieListRepository) {
+
+    companion object {
+        val instance: MovieListService by lazy { MovieListService(MovieListRepositoryImpl.instance) }
+    }
+
     fun addMovie(movie: MediaItem): Result<Unit> {
         if (movieListRepo.findMovieById(movie.id) == null) {
             movieListRepo.addMovie(movie)
