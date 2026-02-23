@@ -1,6 +1,7 @@
 package com.darerm1.whatcha.ui.fragments.home
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
@@ -57,9 +58,12 @@ class MovieViewHolder(
 
     private fun updateFavoriteIcon(movieId: Long) {
         val isFav = isFavorite(movieId)
-        binding.btnFavorite.setImageResource(
-            if (isFav) R.drawable.ic_favorite else R.drawable.ic_favorite_border
-        )
+        if (isFav) {
+            binding.btnFavorite.setImageResource(R.drawable.ic_favorite)
+            binding.btnFavorite.visibility = View.VISIBLE
+        } else {
+            binding.btnFavorite.visibility = View.GONE
+        }
     }
 
     private fun formatGenre(genre: String): String {
