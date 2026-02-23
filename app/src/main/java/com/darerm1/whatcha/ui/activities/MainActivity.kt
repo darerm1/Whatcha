@@ -54,14 +54,13 @@ class MainActivity : AppCompatActivity(), NavigationListener {
     }
 
     override fun openProfile() {
-        //startActivity(Intent(this, ProfileActivity::class.java)) // ProfileActivity doesnt exist yet
+        startActivity(Intent(this, ProfileActivity::class.java))
     }
 
     override fun openDetails(movieId: Long) {
-        val bundle = Bundle().apply { putLong("movie_id", movieId) }
-        val fragment = PlaceholderFragment().apply { arguments = bundle }
         supportFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, fragment)
+            .replace(R.id.fragment_container, com.darerm1.whatcha.ui.fragments.DetailFragment.newInstance(movieId))
+            .addToBackStack(null)
             .commit()
     }
 }

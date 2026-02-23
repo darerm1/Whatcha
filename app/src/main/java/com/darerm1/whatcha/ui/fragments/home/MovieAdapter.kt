@@ -8,11 +8,12 @@ import com.darerm1.whatcha.data.interfaces.MediaItem
 
 class MovieAdapter(
     private val onFavoriteClick: (MediaItem) -> Unit,
+    private val onItemClick: (MediaItem) -> Unit,
     private val isFavorite: (Long) -> Boolean
 ) : ListAdapter<MediaItem, MovieViewHolder>(MovieDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MovieViewHolder {
-        return MovieViewHolder.create(parent, onFavoriteClick, isFavorite)
+        return MovieViewHolder.create(parent, onFavoriteClick, onItemClick, isFavorite)
     }
 
     override fun onBindViewHolder(holder: MovieViewHolder, position: Int) {

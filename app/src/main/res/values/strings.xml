@@ -1,3 +1,47 @@
 <resources>
     <string name="app_name">Whatcha</string>
+
+    <!-- Bottom navigation -->
+    <string name="nav_home">Главная</string>
+    <string name="nav_favorites">Избранное</string>
+    <string name="nav_profile">Профиль</string>
+
+    <!-- Profile (A2) -->
+    <string name="title_profile">Профиль</string>
+    <string name="profile_user_name_default">Пользователь</string>
+    <string name="profile_favorites_count">В избранном: %1$d</string>
+    <string name="profile_average_rating">Средний рейтинг: %1$.1f</string>
+    <string name="cd_profile_avatar">Аватар профиля</string>
+    <string name="cd_edit_avatar">Изменить фото профиля</string>
+    <string name="cd_edit_nickname">Редактировать никнейм</string>
+    <string name="profile_edit_nickname_title">Никнейм</string>
+    <string name="profile_edit_nickname_hint">Введите никнейм</string>
+    <string name="profile_save">Сохранить</string>
+    <string name="profile_cancel">Отмена</string>
+
+    <string name="profile_theme_title">Тема</string>
+    <string name="profile_theme_system">Системная</string>
+    <string name="profile_theme_light">Светлая</string>
+    <string name="profile_theme_dark">Тёмная</string>
+
+    <!-- Details (F3) -->
+    <string name="title_details">Детали</string>
+    <string name="detail_not_found">Не удалось открыть элемент</string>
+    <string name="detail_meta">%1$d • %2$s • %3$d мин</string>
+    <string name="detail_rating_label">Ваша оценка</string>
+    <string name="detail_rating_value">Ваша оценка: %1$d</string>
+    <string name="detail_rating_not_set">Оценка не задана</string>
+    <string name="detail_open_trailer">Открыть трейлер</string>
+    <string name="detail_trailer_unavailable">Трейлер недоступен</string>
+    <string name="detail_added_to_favorites">Добавлено в избранное</string>
+    <string name="detail_removed_from_favorites">Удалено из избранного</string>
+    <string name="detail_rating_saved">Оценка сохранена</string>
+    <string name="detail_save_rating">Сохранить оценку</string>
+    <string name="detail_add_to_favorites_first">Сначала добавьте фильм в избранное</string>
+
+    <!-- Content descriptions -->
+    <string name="cd_movie_poster">Постер</string>
+    <string name="cd_add_to_favorites">Добавить в избранное</string>
+    <string name="cd_remove_from_favorites">Убрать из избранного</string>
+
 </resources>

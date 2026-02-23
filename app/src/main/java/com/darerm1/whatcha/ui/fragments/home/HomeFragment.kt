@@ -23,6 +23,7 @@ class HomeFragment : Fragment() {
     private val adapter by lazy {
         MovieAdapter(
             onFavoriteClick = { movie -> toggleFavorite(movie) },
+            onItemClick = { movie -> (activity as? com.darerm1.whatcha.ui.NavigationListener)?.openDetails(movie.id) },
             isFavorite = { movieId -> isFavorite(movieId) }
         )
     }

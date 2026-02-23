@@ -11,12 +11,17 @@ import com.darerm1.whatcha.databinding.ItemMovieBinding
 class MovieViewHolder(
     private val binding: ItemMovieBinding,
     private val onFavoriteClick: (MediaItem) -> Unit,
+    private val onItemClick: (MediaItem) -> Unit,
     private val isFavorite: (Long) -> Boolean
 ) : RecyclerView.ViewHolder(binding.root) {
 
     private var currentMovie: MediaItem? = null
 
     init {
+        binding.root.setOnClickListener {
+            currentMovie?.let { onItemClick(it) }
+        }
+
         binding.btnFavorite.setOnClickListener {
             currentMovie?.let { onFavoriteClick(it) }
         }
@@ -65,6 +70,7 @@ class MovieViewHolder(
         fun create(
             parent: ViewGroup,
             onFavoriteClick: (MediaItem) -> Unit,
+            onItemClick: (MediaItem) -> Unit,
             isFavorite: (Long) -> Boolean
         ): MovieViewHolder {
             val binding = ItemMovieBinding.inflate(
@@ -72,7 +78,7 @@ class MovieViewHolder(
                 parent,
                 false
             )
-            return MovieViewHolder(binding, onFavoriteClick, isFavorite)
+            return MovieViewHolder(binding, onFavoriteClick, onItemClick, isFavorite)
         }
     }
 }
