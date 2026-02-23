@@ -1,8 +1,6 @@
-package com.darerm1.whatcha.ui.fragments
+package com.darerm1.whatcha.ui.fragments.details
 
-import android.content.Intent
 import android.content.res.ColorStateList
-import android.net.Uri
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.LayoutInflater
@@ -24,8 +22,8 @@ class DetailFragment : Fragment() {
     private var _binding: FragmentDetailBinding? = null
     private val binding get() = _binding!!
 
-    private val allMoviesService = AllMoviesService.instance
-    private val movieListService = MovieListService.instance
+    private val allMoviesService = AllMoviesService.Companion.instance
+    private val movieListService = MovieListService.Companion.instance
 
     private var movieId: Long = -1L
 
