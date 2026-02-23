@@ -17,7 +17,9 @@ interface MediaItem {
 
     var personalRating: Int?
 
-    val date: LocalDate?
+    var date: LocalDate?
 
     val posterUrl: String?
+
+    fun contentEquals(other: MediaItem): Boolean
 }

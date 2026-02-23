@@ -38,10 +38,35 @@
     <string name="detail_rating_saved">Оценка сохранена</string>
     <string name="detail_save_rating">Сохранить оценку</string>
     <string name="detail_add_to_favorites_first">Сначала добавьте фильм в избранное</string>
+    <string name="set_status">Установить статус</string>
+    <string name="status_planned">Запланирован</string>
+    <string name="status_completed">Просмотрен</string>
+    <string name="status_abandoned">Прерван</string>
+    <string name="status_not_set">Не установлен</string>
+    <string name="status_updated">Статус обновлен</string>
+    <string name="status_label">Статус:</string>
+
 
     <!-- Content descriptions -->
     <string name="cd_movie_poster">Постер</string>
     <string name="cd_add_to_favorites">Добавить в избранное</string>
     <string name="cd_remove_from_favorites">Убрать из избранного</string>
+
+    <!-- F2 -->
+    <string name="sort">Сортировать ▼</string>
+    <string name="sort_by_rating">По рейтингу</string>
+    <string name="sort_by_year">По году</string>
+    <string name="filter">Показать ▼</string>
+    <string name="filter_completed">Просмотренные</string>
+    <string name="filter_planned">Планируемые</string>
+    <string name="filter_abandoned">Прерванные</string>
+    <string name="filter_all">Все фильмы</string>
+    <string name="empty_list">Ваш список избранного пока пуст...</string>
+
+    <!-- F1 -->
+    <string name="search">Поиск фильмов...</string>
+    <string name="show_more">Показать ещё</string>
+    <string name="not_found">Фильмы не найдены</string>
+
 
 </resources>

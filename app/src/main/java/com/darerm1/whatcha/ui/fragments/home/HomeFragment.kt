@@ -29,19 +29,29 @@ class HomeFragment : Fragment() {
     }
 
     private val movies = mutableListOf<MediaItem>()
+
     private var currentPage = 1
+
     private var currentQuery = ""
+
     private var hasMore = true
+
     private var favoriteIds: Set<Long> = emptySet()
+
     private var isExpanded = false
 
     private val debounceHandler = Handler(Looper.getMainLooper())
+
     private var debounceRunnable: Runnable? = null
 
     private var recyclerView: androidx.recyclerview.widget.RecyclerView? = null
+
     private var searchView: SearchView? = null
+
     private var progressBar: android.widget.ProgressBar? = null
+
     private var tvEmpty: android.widget.TextView? = null
+
     private var btnLoadMore: MaterialButton? = null
 
     override fun onCreateView(

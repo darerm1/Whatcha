@@ -6,10 +6,13 @@ import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.PopupMenu
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import coil.load
 import com.darerm1.whatcha.R
+import com.darerm1.whatcha.data.enums.Status
 import com.darerm1.whatcha.data.models.Movie
 import com.darerm1.whatcha.databinding.FragmentDetailBinding
 import com.darerm1.whatcha.infrastructure.AllMoviesService
@@ -20,12 +23,16 @@ import com.google.android.material.snackbar.Snackbar
 class DetailFragment : Fragment() {
 
     private var _binding: FragmentDetailBinding? = null
+
     private val binding get() = _binding!!
 
     private val allMoviesService = AllMoviesService.Companion.instance
+
     private val movieListService = MovieListService.Companion.instance
 
     private var movieId: Long = -1L
+
+    private lateinit var statusButton: Button
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -41,6 +48,8 @@ class DetailFragment : Fragment() {
 
         movieId = arguments?.getLong(ARG_MOVIE_ID, -1L) ?: -1L
 
+        statusButton = view.findViewById(R.id.statusButton)
+
         binding.toolbar.setNavigationOnClickListener {
             requireActivity().onBackPressedDispatcher.onBackPressed()
         }
@@ -50,6 +59,8 @@ class DetailFragment : Fragment() {
         binding.saveRatingButton.setOnClickListener {
             updateRating(binding.ratingSlider.value.toInt())
         }
+
+        statusButton.setOnClickListener { showStatusMenu() }
 
         render()
     }
@@ -98,7 +109,76 @@ class DetailFragment : Fragment() {
         }
 
         binding.saveRatingButton.isEnabled = isFavorite
+
+        updateStatusButtonText(movie.status)
     }
+
+    private fun updateStatusButtonText(status: Status) {
+        val statusText = getString(R.string.status_label) + " " + when (status) {
+            Status.PLANNED -> getString(R.string.status_planned)
+            Status.COMPLETED -> getString(R.string.status_completed)
+            Status.ABANDONED -> getString(R.string.status_abandoned)
+            Status.NOT_SET -> getString(R.string.status_not_set)
+        }
+        statusButton.text = statusText
+    }
+
+    private fun showStatusMenu() {
+        PopupMenu(requireContext(), statusButton).apply {
+            menuInflater.inflate(R.menu.menu_status, menu)
+            setOnMenuItemClickListener { item ->
+                when (item.itemId) {
+                    R.id.status_planned -> {
+                        updateStatus(Status.PLANNED)
+                        true
+                    }
+                    R.id.status_completed -> {
+                        updateStatus(Status.COMPLETED)
+                        true
+                    }
+                    R.id.status_abandoned -> {
+                        updateStatus(Status.ABANDONED)
+                        true
+                    }
+                    R.id.status_not_set -> {
+                        updateStatus(Status.NOT_SET)
+                        true
+                    }
+                    else -> false
+                }
+            }
+            show()
+        }
+    }
+
+    private fun updateStatus(newStatus: Status) {
+        val isFav = movieListService.getMovies().any { it.id == movieId }
+
+        if (!isFav) {
+            Snackbar.make(
+                binding.root,
+                getString(R.string.detail_add_to_favorites_first),
+                Snackbar.LENGTH_SHORT
+            ).show()
+            return
+        }
+
+        when (newStatus) {
+            Status.PLANNED -> movieListService.markAsPlanned(movieId)
+            Status.COMPLETED -> movieListService.markAsCompleted(movieId)
+            Status.ABANDONED -> movieListService.markAsAbandoned(movieId)
+            Status.NOT_SET -> movieListService.markAsNotSet(movieId)
+        }
+
+        Snackbar.make(
+            binding.root,
+            R.string.status_updated,
+            Snackbar.LENGTH_SHORT
+        ).show()
+
+        render()
+    }
+
 
     private fun updateRating(value: Int) {
         val isFav = movieListService.getMovies().any { it.id == movieId }

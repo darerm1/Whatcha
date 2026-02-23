@@ -24,7 +24,23 @@ data class Movie(
 
     override var status: Status = Status.NOT_SET,
 
-    override val date: LocalDate? = null,
+    override var date: LocalDate? = null,
 
     override val posterUrl: String? = null
-): MediaItem
+): MediaItem {
+    override fun contentEquals(other: MediaItem): Boolean {
+        if (other !is Movie) return false
+
+        return this.id == other.id &&
+                this.name == other.name &&
+                this.year == other.year &&
+                this.posterUrl == other.posterUrl &&
+                this.description == other.description &&
+                this.genre == other.genre &&
+                this.duration == other.duration &&
+                this.personalRating == other.personalRating &&
+                this.status == other.status &&
+                this.date == other.date &&
+                this.trailerUrl == other.trailerUrl
+    }
+}

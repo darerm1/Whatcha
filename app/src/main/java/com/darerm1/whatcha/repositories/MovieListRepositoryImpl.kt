@@ -3,8 +3,9 @@ package com.darerm1.whatcha.repositories
 import com.darerm1.whatcha.data.interfaces.MediaItem
 import com.darerm1.whatcha.data.interfaces.MovieListRepository
 import com.darerm1.whatcha.data.enums.Status
+import java.time.LocalDate
 
-class MovieListRepositoryImpl: MovieListRepository {
+class MovieListRepositoryImpl private constructor(): MovieListRepository {
     private val movieList = mutableListOf<MediaItem>()
 
     companion object {
@@ -22,6 +23,11 @@ class MovieListRepositoryImpl: MovieListRepository {
     override fun changeStatus(id: Long, newStatus: Status) {
         val movie = movieList.find { a -> a.id == id }
         movie?.status = newStatus
+    }
+
+    override fun changeDate(id: Long, newDate: LocalDate) {
+        val movie = movieList.find { a -> a.id == id }
+        movie?.date = newDate
     }
 
     override fun searchMoviesByName(query: String): List<MediaItem> {
@@ -68,8 +74,10 @@ class MovieListRepositoryImpl: MovieListRepository {
     override fun updateRating(id: Long, newRating: Int): Boolean {
         val movie = movieList.find { a -> a.id == id }
         movie?.personalRating = newRating
-        if (movie != null && movie.status != Status.COMPLETED)
+        if (movie != null && movie.status != Status.COMPLETED) {
             movie.status = Status.COMPLETED
+            movie.date = LocalDate.now()
+        }
         return movie != null
     }
 

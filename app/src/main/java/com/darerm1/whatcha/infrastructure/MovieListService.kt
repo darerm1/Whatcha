@@ -5,6 +5,7 @@ import com.darerm1.whatcha.data.enums.Status
 import com.darerm1.whatcha.data.interfaces.MovieListRepository
 import com.darerm1.whatcha.repositories.MovieListRepositoryImpl
 import com.darerm1.whatcha.utils.Result
+import java.time.LocalDate
 
 class MovieListService private constructor(private val movieListRepo: MovieListRepository) {
 
@@ -28,7 +29,8 @@ class MovieListService private constructor(private val movieListRepo: MovieListR
         return Result.Error("The movie is already not in the list")
     }
 
-    fun markAsCompleted(id: Long) { 
+    fun markAsCompleted(id: Long) {
+        movieListRepo.changeDate(id, LocalDate.now())
         return movieListRepo.changeStatus(id, Status.COMPLETED)
     }
 

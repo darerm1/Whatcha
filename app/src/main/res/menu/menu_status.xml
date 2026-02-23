@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/status_planned"
+        android:title="@string/status_planned" />
+    <item
+        android:id="@+id/status_completed"
+        android:title="@string/status_completed" />
+    <item
+        android:id="@+id/status_abandoned"
+        android:title="@string/status_abandoned" />
+    <item
+        android:id="@+id/status_not_set"
+        android:title="@string/status_not_set" />
+</menu>

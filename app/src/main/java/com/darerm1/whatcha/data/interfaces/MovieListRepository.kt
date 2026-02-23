@@ -1,6 +1,7 @@
 package com.darerm1.whatcha.data.interfaces
 
 import com.darerm1.whatcha.data.enums.Status
+import java.time.LocalDate
 
 interface MovieListRepository {
     fun addMovie(movie: MediaItem)
@@ -22,4 +23,6 @@ interface MovieListRepository {
     fun getMovies(): List<MediaItem>
 
     fun getStatistics(): String
+
+    fun changeDate(id: Long, newDate: LocalDate)
 }

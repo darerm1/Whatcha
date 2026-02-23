@@ -10,6 +10,7 @@ class AllMoviesRepositoryImpl: AllMoviesRepository {
     companion object {
         val instance: AllMoviesRepositoryImpl by lazy { AllMoviesRepositoryImpl() }
     }
+
     private val allMovies = listOf<MediaItem>(
         Movie(
             id = 1,
