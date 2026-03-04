@@ -7,7 +7,7 @@ import com.darerm1.whatcha.repositories.MovieListRepositoryImpl
 import com.darerm1.whatcha.utils.Result
 import java.time.LocalDate
 
-class MovieListService private constructor(private val movieListRepo: MovieListRepository) {
+class MovieListService(private val movieListRepo: MovieListRepository) {
 
     companion object {
         val instance: MovieListService by lazy { MovieListService(MovieListRepositoryImpl.instance) }

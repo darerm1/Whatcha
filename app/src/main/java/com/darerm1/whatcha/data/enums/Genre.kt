@@ -1,15 +1,25 @@
 package com.darerm1.whatcha.data.enums
 
-enum class Genre {
-    COMEDY,
-
-    DRAMA,
-
-    HORROR,
-
-    THRILLER,
-
-    FANTASY,
-
-    DOCUMENTARY
+enum class Genre(val russianName: String) {
+    DRAMA("драма"),
+    COMEDY("комедия"),
+    THRILLER("триллер"),
+    HORROR("ужасы"),
+    FANTASY("фэнтези"),
+    ACTION("боевик"),
+    ADVENTURE("приключения"),
+    ANIMATION("мультфильм"),
+    BIOGRAPHY("биография"),
+    WAR("военный"),
+    DETECTIVE("детектив"),
+    DOCUMENTARY("документальный"),
+    FAMILY("семейный"),
+    HISTORY("история"),
+    MUSIC("музыка"),
+    MUSICAL("мюзикл"),
+    MYSTERY("детектив"),
+    ROMANCE("мелодрама"),
+    SCI_FI("фантастика"),
+    SPORT("спорт"),
+    WESTERN("вестерн")
 }

@@ -7,18 +7,26 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.PopupMenu
+import android.widget.TextView
 import androidx.core.os.bundleOf
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import coil.load
 import com.darerm1.whatcha.R
+import com.darerm1.whatcha.WhatchaApplication
+import com.darerm1.whatcha.data.common.NetworkError
+import com.darerm1.whatcha.data.common.NetworkResult
 import com.darerm1.whatcha.data.enums.Status
 import com.darerm1.whatcha.data.models.Movie
 import com.darerm1.whatcha.databinding.FragmentDetailBinding
-import com.darerm1.whatcha.infrastructure.AllMoviesService
 import com.darerm1.whatcha.infrastructure.MovieListService
 import com.darerm1.whatcha.utils.Result
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.launch
 
 class DetailFragment : Fragment() {
 
@@ -26,13 +34,16 @@ class DetailFragment : Fragment() {
 
     private val binding get() = _binding!!
 
-    private val allMoviesService = AllMoviesService.Companion.instance
+    private val repository by lazy { WhatchaApplication.instance.repository }
 
     private val movieListService = MovieListService.Companion.instance
 
     private var movieId: Long = -1L
 
     private lateinit var statusButton: Button
+    private var errorLayout: LinearLayout? = null
+    private var errorText: TextView? = null
+    private var retryButton: MaterialButton? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -47,8 +58,11 @@ class DetailFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         movieId = arguments?.getLong(ARG_MOVIE_ID, -1L) ?: -1L
-
+        
         statusButton = view.findViewById(R.id.statusButton)
+        errorLayout = view.findViewById(R.id.errorLayout)
+        errorText = view.findViewById(R.id.errorText)
+        retryButton = view.findViewById(R.id.retryButton)
 
         binding.toolbar.setNavigationOnClickListener {
             requireActivity().onBackPressedDispatcher.onBackPressed()
@@ -61,13 +75,46 @@ class DetailFragment : Fragment() {
         }
 
         statusButton.setOnClickListener { showStatusMenu() }
+        
+        retryButton?.setOnClickListener { render() }
 
         render()
     }
 
     private fun render() {
-        val movie = allMoviesService.getMovieById(movieId) as? Movie ?: return
-
+        viewLifecycleOwner.lifecycleScope.launch {
+            when (val result = repository.getMovieById(movieId)) {
+                is NetworkResult.Success -> {
+                    val movie = result.data as? Movie ?: return@launch
+                    displayMovie(movie)
+                    showError(false)
+                }
+                is NetworkResult.Error -> {
+                    showError(true, getErrorMessage(result.error))
+                }
+            }
+        }
+    }
+    
+    private fun showError(show: Boolean, message: String = "") {
+        errorLayout?.isVisible = show
+        if (show && message.isNotEmpty()) {
+            errorText?.text = message
+        }
+    }
+    
+    private fun getErrorMessage(error: NetworkError): String {
+        return when (error) {
+            is NetworkError.NoInternet -> getString(R.string.error_no_internet)
+            is NetworkError.Timeout -> getString(R.string.error_timeout)
+            is NetworkError.Unauthorized -> getString(R.string.error_unauthorized)
+            is NetworkError.RateLimitExceeded -> getString(R.string.error_rate_limit)
+            is NetworkError.ServerError -> getString(R.string.error_server, error.code)
+            is NetworkError.Unknown -> getString(R.string.error_unknown)
+        }
+    }
+    
+    private fun displayMovie(movie: Movie) {
         binding.toolbar.title = movie.name
         binding.titleText.text = movie.name
         binding.descriptionText.text = movie.description
@@ -204,27 +251,39 @@ class DetailFragment : Fragment() {
     }
 
     private fun toggleFavorite() {
-        val movie = allMoviesService.getMovieById(movieId) as? Movie ?: return
+        viewLifecycleOwner.lifecycleScope.launch {
+            when (val result = repository.getMovieById(movieId)) {
+                is NetworkResult.Success -> {
+                    val movie = result.data as? Movie ?: return@launch
+                    val isFav = movieListService.getMovies().any { it.id == movie.id }
 
-        val isFav = movieListService.getMovies().any { it.id == movie.id }
+                    val favResult =
+                        if (isFav)
+                            movieListService.removeMovieById(movie.id)
+                        else
+                            movieListService.addMovie(movie)
 
-        val result =
-            if (isFav)
-                movieListService.removeMovieById(movie.id)
-            else
-                movieListService.addMovie(movie)
+                    val msg = when (favResult) {
+                        is Result.Success ->
+                            if (isFav)
+                                getString(R.string.detail_removed_from_favorites)
+                            else
+                                getString(R.string.detail_added_to_favorites)
+                        is Result.Error -> favResult.message
+                    }
 
-        val msg = when (result) {
-            is Result.Success ->
-                if (isFav)
-                    getString(R.string.detail_removed_from_favorites)
-                else
-                    getString(R.string.detail_added_to_favorites)
-            is Result.Error -> result.message
+                    Snackbar.make(binding.root, msg, Snackbar.LENGTH_SHORT).show()
+                    render()
+                }
+                is NetworkResult.Error -> {
+                    Snackbar.make(
+                        binding.root,
+                        "Ошибка загрузки фильма",
+                        Snackbar.LENGTH_SHORT
+                    ).show()
+                }
+            }
         }
-
-        Snackbar.make(binding.root, msg, Snackbar.LENGTH_SHORT).show()
-        render()
     }
 
     private fun resolveThemeColor(attr: Int): Int {

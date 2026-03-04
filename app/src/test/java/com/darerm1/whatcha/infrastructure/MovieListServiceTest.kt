@@ -76,10 +76,12 @@ class MovieListServiceTest {
     @Test
     fun `markAsCompleted should update status to COMPLETED`() {
         val movieId = 1L
+        every { mockRepository.changeDate(movieId, any()) } just runs
         every { mockRepository.changeStatus(movieId, Status.COMPLETED) } just runs
 
         service.markAsCompleted(movieId)
 
+        verify { mockRepository.changeDate(movieId, any()) }
         verify { mockRepository.changeStatus(movieId, Status.COMPLETED) }
     }
 

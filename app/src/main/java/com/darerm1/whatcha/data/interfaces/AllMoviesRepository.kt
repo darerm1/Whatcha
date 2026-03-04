@@ -1,9 +1,11 @@
 package com.darerm1.whatcha.data.interfaces
 
+import com.darerm1.whatcha.data.common.NetworkResult
+
 interface AllMoviesRepository {
-    fun searchMovies(query: String): List<MediaItem>
-
-    fun searchMovies(query: String, page: Int, pageSize: Int): List<MediaItem>
-
-    fun getMovieById(id: Long): MediaItem?
+    suspend fun searchMovies(query: String, limit: Int = 20): NetworkResult<List<MediaItem>>
+    suspend fun loadMore(): NetworkResult<List<MediaItem>>
+    suspend fun getMovieById(id: Long): NetworkResult<MediaItem>
+    fun clearCache()
+    fun hasMoreData(): Boolean
 }

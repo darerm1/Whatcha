@@ -1,0 +1,40 @@
+package com.darerm1.whatcha.data.remote.mapper
+
+import android.util.Log
+import com.darerm1.whatcha.data.enums.Genre
+import com.darerm1.whatcha.data.enums.Status
+import com.darerm1.whatcha.data.interfaces.MediaItem
+import com.darerm1.whatcha.data.models.Movie
+import com.darerm1.whatcha.data.remote.dto.MovieDto
+import com.darerm1.whatcha.utils.Result
+
+object MovieMapper {
+    private const val TAG = "MovieMapper"
+    
+    fun mapDtoToDomain(dto: MovieDto): Result<Movie> {
+        return try {
+            val genreName = dto.genres?.firstOrNull()?.name
+            val genre = Genre.values().find { it.russianName == genreName }
+                ?: return Result.Error("Unknown genre: $genreName", IllegalArgumentException("Unknown genre: $genreName"))
+            
+            Result.Success(
+                Movie(
+                    id = dto.id,
+                    name = dto.name ?: "Unknown",
+                    year = dto.year ?: 0,
+                    description = dto.description ?: "",
+                    genre = genre,
+                    posterUrl = dto.poster?.url,
+                    duration = dto.movieLength ?: 0,
+                    trailerUrl = dto.videos?.trailers?.firstOrNull()?.url ?: "",
+                    personalRating = dto.rating?.kp?.toInt(),
+                    status = Status.NOT_SET,
+                    date = null
+                )
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to map movie ${dto.id}: ${e.message}", e)
+            Result.Error("Failed to map movie: ${e.message}", e)
+        }
+    }
+}

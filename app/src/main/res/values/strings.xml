@@ -67,6 +67,15 @@
     <string name="search">Поиск фильмов...</string>
     <string name="show_more">Показать ещё</string>
     <string name="not_found">Фильмы не найдены</string>
+    <string name="retry">Повторить</string>
+    
+    <!-- Error messages -->
+    <string name="error_no_internet">Нет подключения к интернету</string>
+    <string name="error_timeout">Превышено время ожидания</string>
+    <string name="error_unauthorized">Ошибка авторизации</string>
+    <string name="error_rate_limit">Превышен лимит запросов</string>
+    <string name="error_server">Ошибка сервера: %d</string>
+    <string name="error_unknown">Произошла неизвестная ошибка</string>
 
 
 </resources>
