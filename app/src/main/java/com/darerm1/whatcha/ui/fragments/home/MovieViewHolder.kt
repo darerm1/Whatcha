@@ -28,33 +28,36 @@ class MovieViewHolder(
         }
     }
 
-    fun bind(movie: MediaItem) {
-        currentMovie = movie
+      fun bind(movie: MediaItem) {
+          currentMovie = movie
 
-        binding.tvTitle.text = movie.name
-        binding.tvYearGenre.text = "${movie.year}, ${formatGenre(movie.genre.name)}"
+          binding.tvTitle.text = movie.name
+          binding.tvYearGenre.text = "${movie.year}, ${formatGenre(movie.genre.name)}"
 
-        val posterUrl = movie.posterUrl
-        if (posterUrl.isNullOrBlank()) {
-            binding.ivPoster.setImageResource(R.drawable.placeholder_poster)
-            binding.tvPlaceholder.visibility = android.view.View.VISIBLE
-        } else {
-            binding.ivPoster.load(posterUrl) {
-                placeholder(R.drawable.placeholder_poster)
-                error(R.drawable.placeholder_poster)
-                listener(
-                    onSuccess = { _, _ ->
-                        binding.tvPlaceholder.visibility = android.view.View.GONE
-                    },
-                    onError = { _, _ ->
-                        binding.tvPlaceholder.visibility = android.view.View.VISIBLE
-                    }
-                )
-            }
-        }
+          val posterUrl = movie.posterUrl
+          if (posterUrl.isNullOrBlank()) {
+              binding.ivPoster.setImageResource(R.drawable.placeholder_poster)
+              binding.tvPlaceholder.visibility = android.view.View.GONE
+          } else {
+              binding.tvPlaceholder.visibility = android.view.View.GONE
+              
+              binding.ivPoster.load(posterUrl) {
+                  placeholder(R.drawable.placeholder_poster)
+                  error(R.drawable.placeholder_poster)
+                  listener(
+                      onSuccess = { _, _ ->
+                          android.util.Log.d("MovieViewHolder", "Poster loaded successfully for: ${movie.name}")
+                          binding.tvPlaceholder.visibility = android.view.View.GONE
+                      },
+                      onError = { _, error ->
+                          android.util.Log.e("MovieViewHolder", "Failed to load poster for ${movie.name}: ${error.throwable?.message}")
+                      }
+                  )
+              }
+          }
 
-        updateFavoriteIcon(movie.id)
-    }
+          updateFavoriteIcon(movie.id)
+      }
 
     private fun updateFavoriteIcon(movieId: Long) {
         val isFav = isFavorite(movieId)

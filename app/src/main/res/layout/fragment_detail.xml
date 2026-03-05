@@ -67,8 +67,7 @@
                 android:layout_height="220dp"
                 android:contentDescription="@string/cd_movie_poster"
                 android:scaleType="centerInside"
-                android:src="@drawable/ic_movie_placeholder"
-                app:tint="?attr/colorOnSurface" />
+                android:src="@drawable/placeholder_poster" />
 
             <LinearLayout
                 android:layout_width="match_parent"

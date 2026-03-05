@@ -97,11 +97,19 @@ class DetailFragment : Fragment() {
 
     private fun loadPoster(posterUrl: String?) {
         if (posterUrl.isNullOrBlank()) {
-            binding.posterImage.setImageResource(R.drawable.ic_movie_placeholder)
+            binding.posterImage.setImageResource(R.drawable.placeholder_poster)
         } else {
             binding.posterImage.load(posterUrl) {
-                placeholder(R.drawable.ic_movie_placeholder)
-                error(R.drawable.ic_movie_placeholder)
+                placeholder(R.drawable.placeholder_poster)
+                error(R.drawable.placeholder_poster)
+                listener(
+                    onSuccess = { _, _ ->
+                        android.util.Log.d("DetailFragment", "Poster loaded successfully for movie: $movieId")
+                    },
+                    onError = { _, error ->
+                        android.util.Log.e("DetailFragment", "Failed to load poster for movie $movieId: ${error.throwable?.message}")
+                    }
+                )
             }
         }
     }

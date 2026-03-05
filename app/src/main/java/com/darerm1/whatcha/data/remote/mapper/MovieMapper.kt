@@ -22,6 +22,8 @@ object MovieMapper {
                 ?: dto.names?.firstOrNull()?.name
                 ?: "Unknown"
             
+            val posterUrl = dto.poster?.url ?: dto.poster?.previewUrl
+            
             Result.Success(
                 Movie(
                     id = dto.id,
@@ -29,7 +31,7 @@ object MovieMapper {
                     year = dto.year ?: 0,
                     description = dto.description ?: "",
                     genre = genre,
-                    posterUrl = dto.poster?.url,
+                    posterUrl = posterUrl,
                     duration = dto.movieLength ?: 0,
                     trailerUrl = dto.videos?.trailers?.firstOrNull()?.url ?: "",
                     personalRating = dto.rating?.kp?.toInt(),

@@ -22,9 +22,10 @@ class RemoteMoviesRepository(
         private const val TAG = "RemoteMoviesRepository"
     }
     
-    private var currentCursor: String? = null
-    private var searchQuery: String = ""
-    private val isLoading = AtomicBoolean(false)
+     private var currentCursor: String? = null
+     private var searchQuery: String = ""
+     private val isLoading = AtomicBoolean(false)
+     private var hasNextPage: Boolean = false
     
     override suspend fun searchMovies(query: String, limit: Int): NetworkResult<List<MediaItem>> {
         if (isLoading.get()) {
@@ -50,10 +51,11 @@ class RemoteMoviesRepository(
                                 null
                             }
                         }
-                        movies.forEach { cache.put(it.id, it) }
-                        currentCursor = result.data.next
-                        Log.d(TAG, "searchMovies: loaded ${movies.size} movies, nextCursor=$currentCursor")
-                        NetworkResult.Success(movies)
+                         movies.forEach { cache.put(it.id, it) }
+                         currentCursor = result.data.next
+                         hasNextPage = result.data.hasNext
+                         Log.d(TAG, "searchMovies: loaded ${movies.size} movies, nextCursor=$currentCursor, hasNext=$hasNextPage")
+                         NetworkResult.Success(movies)
                     }
                     is NetworkResult.Error -> {
                         Log.e(TAG, "searchMovies: error=${result.error}")
@@ -93,10 +95,11 @@ class RemoteMoviesRepository(
                                 null
                             }
                         }
-                        movies.forEach { cache.put(it.id, it) }
-                        currentCursor = result.data.next
-                        Log.d(TAG, "loadMore: loaded ${movies.size} movies, nextCursor=$currentCursor")
-                        NetworkResult.Success(movies)
+                         movies.forEach { cache.put(it.id, it) }
+                         currentCursor = result.data.next
+                         hasNextPage = result.data.hasNext
+                         Log.d(TAG, "loadMore: loaded ${movies.size} movies, nextCursor=$currentCursor, hasNext=$hasNextPage")
+                         NetworkResult.Success(movies)
                     }
                     is NetworkResult.Error -> {
                         Log.e(TAG, "loadMore: error=${result.error}")
@@ -129,11 +132,12 @@ class RemoteMoviesRepository(
         }
     }
     
-    override fun clearCache() {
-        cache.clear()
-        currentCursor = null
-        searchQuery = ""
-    }
-    
-    override fun hasMoreData(): Boolean = currentCursor != null
+     override fun clearCache() {
+         cache.clear()
+         currentCursor = null
+         searchQuery = ""
+         hasNextPage = false
+     }
+     
+     override fun hasMoreData(): Boolean = currentCursor != null && hasNextPage
 }

@@ -14,6 +14,8 @@ class MovieMapperTest {
         val dto = MovieDto(
             id = 1,
             name = "Test Movie",
+            alternativeName = null,
+            names = null,
             year = 2020,
             description = "Test description",
             genres = listOf(GenreDto("драма")),
@@ -38,10 +40,12 @@ class MovieMapperTest {
     }
     
     @Test
-    fun `mapDtoToDomain should fail for unknown genre`() {
+    fun `mapDtoToDomain should use default genre for unknown genre`() {
         val dto = MovieDto(
             id = 1,
             name = "Test",
+            alternativeName = null,
+            names = null,
             year = 2020,
             description = "Test",
             genres = listOf(GenreDto("неизвестный жанр")),
@@ -53,7 +57,9 @@ class MovieMapperTest {
         
         val result = MovieMapper.mapDtoToDomain(dto)
         
-        assertTrue(result is Result.Error)
+        assertTrue(result is Result.Success)
+        val movie = (result as Result.Success).data
+        assertEquals(Genre.DRAMA, movie.genre)
     }
     
     @Test
@@ -61,6 +67,8 @@ class MovieMapperTest {
         val dto = MovieDto(
             id = 2,
             name = null,
+            alternativeName = null,
+            names = null,
             year = null,
             description = null,
             genres = listOf(GenreDto("комедия")),

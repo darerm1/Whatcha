@@ -11,7 +11,7 @@ class RequestStatsStorage(private val context: Context) {
     private val file = File(context.filesDir, "request_stats.json")
     private val gson = Gson()
     private val lock = Any()
-    
+
     suspend fun incrementRequestCount(movieId: Long) = withContext(Dispatchers.IO) {
         synchronized(lock) {
             val stats = getAllStatsInternal()
@@ -19,19 +19,19 @@ class RequestStatsStorage(private val context: Context) {
             file.writeText(gson.toJson(stats))
         }
     }
-    
+
     suspend fun getRequestCount(movieId: Long): Int = withContext(Dispatchers.IO) {
         synchronized(lock) {
             getAllStatsInternal()[movieId] ?: 0
         }
     }
-    
+
     suspend fun getAllStats(): Map<Long, Int> = withContext(Dispatchers.IO) {
         synchronized(lock) {
             getAllStatsInternal().toMap()
         }
     }
-    
+
     private fun getAllStatsInternal(): MutableMap<Long, Int> {
         return if (file.exists()) {
             try {
