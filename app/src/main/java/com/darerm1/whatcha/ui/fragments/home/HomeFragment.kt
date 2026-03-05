@@ -4,8 +4,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.LinearLayout
-import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.widget.SearchView
 import androidx.core.view.isVisible
@@ -14,16 +12,20 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import com.darerm1.whatcha.R
 import com.darerm1.whatcha.WhatchaApplication
-import com.darerm1.whatcha.data.common.NetworkError
 import com.darerm1.whatcha.data.common.NetworkResult
 import com.darerm1.whatcha.data.interfaces.MediaItem
+import com.darerm1.whatcha.databinding.FragmentHomeBinding
 import com.darerm1.whatcha.infrastructure.MovieListService
-import com.google.android.material.button.MaterialButton
+import com.darerm1.whatcha.ui.NavigationListener
+import com.darerm1.whatcha.utils.NetworkErrorHandler
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class HomeFragment : Fragment() {
+
+    private var _binding: FragmentHomeBinding? = null
+    private val binding get() = _binding!!
 
     private val repository by lazy { WhatchaApplication.instance.repository }
     private val movieListService = MovieListService.instance
@@ -31,7 +33,7 @@ class HomeFragment : Fragment() {
     private val adapter by lazy {
         MovieAdapter(
             onFavoriteClick = { movie -> toggleFavorite(movie) },
-            onItemClick = { movie -> (activity as? com.darerm1.whatcha.ui.NavigationListener)?.openDetails(movie.id) },
+            onItemClick = { movie -> (activity as? NavigationListener)?.openDetails(movie.id) },
             isFavorite = { movieId -> isFavorite(movieId) }
         )
     }
@@ -40,34 +42,17 @@ class HomeFragment : Fragment() {
     private var searchJob: Job? = null
     private var favoriteIds: Set<Long> = emptySet()
 
-    private var recyclerView: androidx.recyclerview.widget.RecyclerView? = null
-    private var searchView: SearchView? = null
-    private var progressBar: android.widget.ProgressBar? = null
-    private var tvEmpty: android.widget.TextView? = null
-    private var btnLoadMore: MaterialButton? = null
-    private var errorLayout: LinearLayout? = null
-    private var errorText: TextView? = null
-    private var retryButton: MaterialButton? = null
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        return inflater.inflate(R.layout.fragment_home, container, false)
+        _binding = FragmentHomeBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        
-        recyclerView = view.findViewById(R.id.recyclerView)
-        searchView = view.findViewById(R.id.searchView)
-        progressBar = view.findViewById(R.id.progressBar)
-        tvEmpty = view.findViewById(R.id.tvEmpty)
-        btnLoadMore = view.findViewById(R.id.btnLoadMore)
-        errorLayout = view.findViewById(R.id.errorLayout)
-        errorText = view.findViewById(R.id.errorText)
-        retryButton = view.findViewById(R.id.retryButton)
         
         refreshFavoriteIds()
         setupRecyclerView()
@@ -78,15 +63,13 @@ class HomeFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
-        recyclerView?.layoutManager = GridLayoutManager(requireContext(), 3)
-        recyclerView?.adapter = adapter
+        binding.recyclerView.layoutManager = GridLayoutManager(requireContext(), 3)
+        binding.recyclerView.adapter = adapter
     }
 
     private fun setupSearchView() {
-        searchView?.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?): Boolean {
-                return true
-            }
+        binding.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean = true
 
             override fun onQueryTextChange(newText: String?): Boolean {
                 searchMovies(newText.orEmpty())
@@ -96,15 +79,11 @@ class HomeFragment : Fragment() {
     }
 
     private fun setupLoadMoreButton() {
-        btnLoadMore?.setOnClickListener {
-            loadMoreMovies()
-        }
+        binding.btnLoadMore.setOnClickListener { loadMoreMovies() }
     }
     
     private fun setupRetryButton() {
-        retryButton?.setOnClickListener {
-            loadMovies()
-        }
+        binding.retryButton.setOnClickListener { loadMovies() }
     }
 
     private fun loadMovies() {
@@ -134,7 +113,7 @@ class HomeFragment : Fragment() {
     private fun searchMovies(query: String) {
         searchJob?.cancel()
         searchJob = viewLifecycleOwner.lifecycleScope.launch {
-            delay(300) // debounce
+            delay(DEBOUNCE_DELAY)
             setLoadingState(true)
             
             when (val result = repository.searchMovies(query, limit = 20)) {
@@ -159,7 +138,7 @@ class HomeFragment : Fragment() {
     
     private fun loadMoreMovies() {
         viewLifecycleOwner.lifecycleScope.launch {
-            btnLoadMore?.isEnabled = false
+            binding.btnLoadMore.isEnabled = false
             
             when (val result = repository.loadMore()) {
                 is NetworkResult.Success -> {
@@ -168,11 +147,11 @@ class HomeFragment : Fragment() {
                     updateLoadMoreButton()
                 }
                 is NetworkResult.Error -> {
-                    showErrorToast("Ошибка загрузки: ${getErrorText(result.error)}")
+                    showErrorToast(getString(R.string.error_loading, NetworkErrorHandler.getErrorMessage(requireContext(), result.error)))
                 }
             }
             
-            btnLoadMore?.isEnabled = true
+            binding.btnLoadMore.isEnabled = true
         }
     }
 
@@ -195,43 +174,29 @@ class HomeFragment : Fragment() {
     }
 
     private fun setLoadingState(isLoading: Boolean) {
-        progressBar?.isVisible = isLoading
-        recyclerView?.isVisible = !isLoading
-        errorLayout?.isVisible = false
-        tvEmpty?.isVisible = false
+        binding.progressBar.isVisible = isLoading
+        binding.recyclerView.isVisible = !isLoading
+        binding.errorLayout.isVisible = false
+        binding.tvEmpty.isVisible = false
     }
     
     private fun showEmptyState() {
-        tvEmpty?.isVisible = true
-        recyclerView?.isVisible = false
-        progressBar?.isVisible = false
-        errorLayout?.isVisible = false
+        binding.tvEmpty.isVisible = true
+        binding.recyclerView.isVisible = false
+        binding.progressBar.isVisible = false
+        binding.errorLayout.isVisible = false
     }
     
-    private fun showErrorState(error: NetworkError) {
-        val message = getErrorText(error)
-        
-        errorText?.text = message
-        errorLayout?.isVisible = true
-        recyclerView?.isVisible = false
-        progressBar?.isVisible = false
-        tvEmpty?.isVisible = false
-    }
-    
-    private fun getErrorText(error: NetworkError): String {
-        return when (error) {
-            is NetworkError.NoInternet -> "Нет подключения к интернету"
-            is NetworkError.Timeout -> "Превышено время ожидания"
-            is NetworkError.RateLimitExceeded -> "Дневной лимит запросов исчерпан"
-            is NetworkError.Unauthorized -> "Ошибка авторизации API"
-            is NetworkError.ServerError -> "Ошибка сервера: ${error.code}"
-            is NetworkError.Unknown -> "Неизвестная ошибка: ${error.message}"
-        }
+    private fun showErrorState(error: com.darerm1.whatcha.data.common.NetworkError) {
+        binding.errorText.text = NetworkErrorHandler.getErrorMessage(requireContext(), error)
+        binding.errorLayout.isVisible = true
+        binding.recyclerView.isVisible = false
+        binding.progressBar.isVisible = false
+        binding.tvEmpty.isVisible = false
     }
     
     private fun updateLoadMoreButton() {
-        val hasMore = repository.hasMoreData()
-        btnLoadMore?.isVisible = hasMore
+        binding.btnLoadMore.isVisible = repository.hasMoreData()
     }
     
     private fun showErrorToast(message: String) {
@@ -241,13 +206,10 @@ class HomeFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         searchJob?.cancel()
-        recyclerView = null
-        searchView = null
-        progressBar = null
-        tvEmpty = null
-        btnLoadMore = null
-        errorLayout = null
-        errorText = null
-        retryButton = null
+        _binding = null
+    }
+    
+    companion object {
+        private const val DEBOUNCE_DELAY = 300L
     }
 }

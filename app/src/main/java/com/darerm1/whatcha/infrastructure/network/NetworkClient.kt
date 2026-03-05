@@ -4,6 +4,7 @@ import android.content.Context
 import com.darerm1.whatcha.BuildConfig
 import com.darerm1.whatcha.data.enums.Genre
 import com.darerm1.whatcha.data.local.stats.RequestStatsStorage
+import com.darerm1.whatcha.data.remote.ApiConfig
 import com.darerm1.whatcha.data.remote.api.PoiskKinoApi
 import com.darerm1.whatcha.data.remote.interceptor.AuthInterceptor
 import com.darerm1.whatcha.data.remote.interceptor.RequestCounterInterceptor
@@ -23,8 +24,7 @@ object NetworkClient {
     fun createApi(context: Context, apiKey: String, applicationScope: CoroutineScope): PoiskKinoApi {
         val statsStorage = RequestStatsStorage(context)
         
-        val cacheSize = 10L * 1024 * 1024 // 10 MB
-        val cache = Cache(context.cacheDir, cacheSize)
+        val cache = Cache(context.cacheDir, ApiConfig.CACHE_SIZE_MB * 1024 * 1024)
         
         val okHttpClient = OkHttpClient.Builder()
             .cache(cache)
@@ -39,8 +39,8 @@ object NetworkClient {
                     )
                 }
             }
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
+            .connectTimeout(ApiConfig.CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .readTimeout(ApiConfig.READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .build()
         
         val gson = GsonBuilder()
@@ -49,7 +49,7 @@ object NetworkClient {
             .create()
         
         return Retrofit.Builder()
-            .baseUrl("https://api.poiskkino.dev/")
+            .baseUrl(ApiConfig.BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create(gson))
             .build()

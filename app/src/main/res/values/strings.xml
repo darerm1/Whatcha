@@ -75,7 +75,8 @@
     <string name="error_unauthorized">Ошибка авторизации</string>
     <string name="error_rate_limit">Превышен лимит запросов</string>
     <string name="error_server">Ошибка сервера: %d</string>
-    <string name="error_unknown">Произошла неизвестная ошибка</string>
+    <string name="error_unknown">Произошла неизвестная ошибка: %s</string>
+    <string name="error_loading">Ошибка загрузки: %s</string>
 
 
 </resources>

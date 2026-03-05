@@ -6,10 +6,7 @@ import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.LinearLayout
 import android.widget.PopupMenu
-import android.widget.TextView
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -17,33 +14,25 @@ import androidx.lifecycle.lifecycleScope
 import coil.load
 import com.darerm1.whatcha.R
 import com.darerm1.whatcha.WhatchaApplication
-import com.darerm1.whatcha.data.common.NetworkError
 import com.darerm1.whatcha.data.common.NetworkResult
 import com.darerm1.whatcha.data.enums.Status
 import com.darerm1.whatcha.data.models.Movie
 import com.darerm1.whatcha.databinding.FragmentDetailBinding
 import com.darerm1.whatcha.infrastructure.MovieListService
+import com.darerm1.whatcha.utils.NetworkErrorHandler
 import com.darerm1.whatcha.utils.Result
-import com.google.android.material.button.MaterialButton
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.launch
 
 class DetailFragment : Fragment() {
 
     private var _binding: FragmentDetailBinding? = null
-
     private val binding get() = _binding!!
 
     private val repository by lazy { WhatchaApplication.instance.repository }
-
-    private val movieListService = MovieListService.Companion.instance
+    private val movieListService = MovieListService.instance
 
     private var movieId: Long = -1L
-
-    private lateinit var statusButton: Button
-    private var errorLayout: LinearLayout? = null
-    private var errorText: TextView? = null
-    private var retryButton: MaterialButton? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -58,30 +47,20 @@ class DetailFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         movieId = arguments?.getLong(ARG_MOVIE_ID, -1L) ?: -1L
-        
-        statusButton = view.findViewById(R.id.statusButton)
-        errorLayout = view.findViewById(R.id.errorLayout)
-        errorText = view.findViewById(R.id.errorText)
-        retryButton = view.findViewById(R.id.retryButton)
 
         binding.toolbar.setNavigationOnClickListener {
             requireActivity().onBackPressedDispatcher.onBackPressed()
         }
 
         binding.favoriteButton.setOnClickListener { toggleFavorite() }
+        binding.saveRatingButton.setOnClickListener { updateRating(binding.ratingSlider.value.toInt()) }
+        binding.statusButton.setOnClickListener { showStatusMenu() }
+        binding.retryButton.setOnClickListener { loadMovie() }
 
-        binding.saveRatingButton.setOnClickListener {
-            updateRating(binding.ratingSlider.value.toInt())
-        }
-
-        statusButton.setOnClickListener { showStatusMenu() }
-        
-        retryButton?.setOnClickListener { render() }
-
-        render()
+        loadMovie()
     }
 
-    private fun render() {
+    private fun loadMovie() {
         viewLifecycleOwner.lifecycleScope.launch {
             when (val result = repository.getMovieById(movieId)) {
                 is NetworkResult.Success -> {
@@ -90,27 +69,16 @@ class DetailFragment : Fragment() {
                     showError(false)
                 }
                 is NetworkResult.Error -> {
-                    showError(true, getErrorMessage(result.error))
+                    showError(true, NetworkErrorHandler.getErrorMessage(requireContext(), result.error))
                 }
             }
         }
     }
     
     private fun showError(show: Boolean, message: String = "") {
-        errorLayout?.isVisible = show
+        binding.errorLayout.isVisible = show
         if (show && message.isNotEmpty()) {
-            errorText?.text = message
-        }
-    }
-    
-    private fun getErrorMessage(error: NetworkError): String {
-        return when (error) {
-            is NetworkError.NoInternet -> getString(R.string.error_no_internet)
-            is NetworkError.Timeout -> getString(R.string.error_timeout)
-            is NetworkError.Unauthorized -> getString(R.string.error_unauthorized)
-            is NetworkError.RateLimitExceeded -> getString(R.string.error_rate_limit)
-            is NetworkError.ServerError -> getString(R.string.error_server, error.code)
-            is NetworkError.Unknown -> getString(R.string.error_unknown)
+            binding.errorText.text = message
         }
     }
     
@@ -119,7 +87,15 @@ class DetailFragment : Fragment() {
         binding.titleText.text = movie.name
         binding.descriptionText.text = movie.description
 
-        val posterUrl = movie.posterUrl
+        loadPoster(movie.posterUrl)
+
+        val isFavorite = movieListService.getMovies().any { it.id == movie.id }
+        updateFavoriteButton(isFavorite)
+        updateRatingSlider(movie.personalRating, isFavorite)
+        updateStatusButtonText(movie.status)
+    }
+
+    private fun loadPoster(posterUrl: String?) {
         if (posterUrl.isNullOrBlank()) {
             binding.posterImage.setImageResource(R.drawable.ic_movie_placeholder)
         } else {
@@ -128,9 +104,9 @@ class DetailFragment : Fragment() {
                 error(R.drawable.ic_movie_placeholder)
             }
         }
+    }
 
-        val isFavorite = movieListService.getMovies().any { it.id == movie.id }
-
+    private fun updateFavoriteButton(isFavorite: Boolean) {
         binding.favoriteButton.setImageResource(
             if (isFavorite) R.drawable.ic_favorite_filled
             else R.drawable.ic_favorite_border
@@ -141,23 +117,18 @@ class DetailFragment : Fragment() {
         else
             com.google.android.material.R.attr.colorOnSurface
 
-        binding.favoriteButton.imageTintList =
-            ColorStateList.valueOf(resolveThemeColor(tintAttr))
+        binding.favoriteButton.imageTintList = ColorStateList.valueOf(resolveThemeColor(tintAttr))
+    }
 
-        val rating = movie.personalRating
+    private fun updateRatingSlider(rating: Int?, isFavorite: Boolean) {
         if (rating != null) {
             binding.ratingSlider.value = rating.toFloat()
-            binding.ratingValue.text =
-                getString(R.string.detail_rating_value, rating)
+            binding.ratingValue.text = getString(R.string.detail_rating_value, rating)
         } else {
             binding.ratingSlider.value = 0f
-            binding.ratingValue.text =
-                getString(R.string.detail_rating_not_set)
+            binding.ratingValue.text = getString(R.string.detail_rating_not_set)
         }
-
         binding.saveRatingButton.isEnabled = isFavorite
-
-        updateStatusButtonText(movie.status)
     }
 
     private fun updateStatusButtonText(status: Status) {
@@ -167,46 +138,30 @@ class DetailFragment : Fragment() {
             Status.ABANDONED -> getString(R.string.status_abandoned)
             Status.NOT_SET -> getString(R.string.status_not_set)
         }
-        statusButton.text = statusText
+        binding.statusButton.text = statusText
     }
 
     private fun showStatusMenu() {
-        PopupMenu(requireContext(), statusButton).apply {
+        PopupMenu(requireContext(), binding.statusButton).apply {
             menuInflater.inflate(R.menu.menu_status, menu)
             setOnMenuItemClickListener { item ->
-                when (item.itemId) {
-                    R.id.status_planned -> {
-                        updateStatus(Status.PLANNED)
-                        true
-                    }
-                    R.id.status_completed -> {
-                        updateStatus(Status.COMPLETED)
-                        true
-                    }
-                    R.id.status_abandoned -> {
-                        updateStatus(Status.ABANDONED)
-                        true
-                    }
-                    R.id.status_not_set -> {
-                        updateStatus(Status.NOT_SET)
-                        true
-                    }
-                    else -> false
+                val status = when (item.itemId) {
+                    R.id.status_planned -> Status.PLANNED
+                    R.id.status_completed -> Status.COMPLETED
+                    R.id.status_abandoned -> Status.ABANDONED
+                    R.id.status_not_set -> Status.NOT_SET
+                    else -> return@setOnMenuItemClickListener false
                 }
+                updateStatus(status)
+                true
             }
             show()
         }
     }
 
     private fun updateStatus(newStatus: Status) {
-        val isFav = movieListService.getMovies().any { it.id == movieId }
-
-        if (!isFav) {
-            Snackbar.make(
-                binding.root,
-                getString(R.string.detail_add_to_favorites_first),
-                Snackbar.LENGTH_SHORT
-            ).show()
+        if (!isInFavorites()) {
+            showSnackbar(R.string.detail_add_to_favorites_first)
             return
         }
 
@@ -217,37 +172,26 @@ class DetailFragment : Fragment() {
             Status.NOT_SET -> movieListService.markAsNotSet(movieId)
         }
 
-        Snackbar.make(
-            binding.root,
-            R.string.status_updated,
-            Snackbar.LENGTH_SHORT
-        ).show()
-
-        render()
+        showSnackbar(R.string.status_updated)
+        loadMovie()
     }
 
 
     private fun updateRating(value: Int) {
-        val isFav = movieListService.getMovies().any { it.id == movieId }
-
-        if (!isFav) {
-            Snackbar.make(
-                binding.root,
-                getString(R.string.detail_add_to_favorites_first),
-                Snackbar.LENGTH_SHORT
-            ).show()
+        if (!isInFavorites()) {
+            showSnackbar(R.string.detail_add_to_favorites_first)
             return
         }
 
         val result = movieListService.updateRating(movieId, value)
 
-        val msg = when (result) {
+        val message = when (result) {
             is Result.Success -> getString(R.string.detail_rating_saved)
             is Result.Error -> result.message
         }
 
-        Snackbar.make(binding.root, msg, Snackbar.LENGTH_SHORT).show()
-        render()
+        showSnackbar(message)
+        loadMovie()
     }
 
     private fun toggleFavorite() {
@@ -255,35 +199,42 @@ class DetailFragment : Fragment() {
             when (val result = repository.getMovieById(movieId)) {
                 is NetworkResult.Success -> {
                     val movie = result.data as? Movie ?: return@launch
-                    val isFav = movieListService.getMovies().any { it.id == movie.id }
+                    val isFav = isInFavorites()
 
-                    val favResult =
-                        if (isFav)
-                            movieListService.removeMovieById(movie.id)
-                        else
-                            movieListService.addMovie(movie)
+                    val favResult = if (isFav) {
+                        movieListService.removeMovieById(movie.id)
+                    } else {
+                        movieListService.addMovie(movie)
+                    }
 
-                    val msg = when (favResult) {
-                        is Result.Success ->
-                            if (isFav)
-                                getString(R.string.detail_removed_from_favorites)
-                            else
-                                getString(R.string.detail_added_to_favorites)
+                    val message = when (favResult) {
+                        is Result.Success -> getString(
+                            if (isFav) R.string.detail_removed_from_favorites
+                            else R.string.detail_added_to_favorites
+                        )
                         is Result.Error -> favResult.message
                     }
 
-                    Snackbar.make(binding.root, msg, Snackbar.LENGTH_SHORT).show()
-                    render()
+                    showSnackbar(message)
+                    loadMovie()
                 }
                 is NetworkResult.Error -> {
-                    Snackbar.make(
-                        binding.root,
-                        "Ошибка загрузки фильма",
-                        Snackbar.LENGTH_SHORT
-                    ).show()
+                    showSnackbar(R.string.error_loading)
                 }
             }
         }
+    }
+    
+    private fun isInFavorites(): Boolean {
+        return movieListService.getMovies().any { it.id == movieId }
+    }
+
+    private fun showSnackbar(messageResId: Int) {
+        Snackbar.make(binding.root, messageResId, Snackbar.LENGTH_SHORT).show()
+    }
+    
+    private fun showSnackbar(message: String) {
+        Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
     }
 
     private fun resolveThemeColor(attr: Int): Int {

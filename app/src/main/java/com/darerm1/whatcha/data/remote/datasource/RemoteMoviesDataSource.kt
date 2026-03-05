@@ -7,9 +7,10 @@ import com.darerm1.whatcha.data.remote.dto.MovieDto
 import com.darerm1.whatcha.data.remote.dto.MovieListResponse
 
 class RemoteMoviesDataSource(
-    private val api: PoiskKinoApi,
-    private val safeApiCall: SafeApiCall = SafeApiCall()
+    private val api: PoiskKinoApi
 ) {
+    private val safeApiCall = SafeApiCall()
+    
     suspend fun getMovieById(id: Long): NetworkResult<MovieDto> {
         return safeApiCall.execute { api.getMovieById(id) }
     }
