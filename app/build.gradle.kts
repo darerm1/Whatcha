@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -15,8 +17,14 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        
-        val apiKey = project.findProperty("api_key") as? String ?: ""
+
+        val localProperties = Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localProperties.load(localPropertiesFile.inputStream())
+        }
+
+        val apiKey = localProperties.getProperty("api_key") ?: ""
         buildConfigField("String", "API_KEY", "\"$apiKey\"")
     }
 
@@ -55,7 +63,7 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     testImplementation("io.mockk:mockk:1.13.8")
     implementation("io.coil-kt:coil:2.5.0")
-    
+
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
     implementation(libs.okhttp)
