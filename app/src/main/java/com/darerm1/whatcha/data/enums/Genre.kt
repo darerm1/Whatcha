@@ -21,5 +21,13 @@ enum class Genre(val russianName: String) {
     ROMANCE("мелодрама"),
     SCI_FI("фантастика"),
     SPORT("спорт"),
-    WESTERN("вестерн")
+    WESTERN("вестерн"),
+    REALITY_TV("реальное ТВ"),
+    ADULT("для взрослых"),
+    SHORT("короткометражка"),
+    CRIME("криминал"),
+    TALK_SHOW("ток-шоу"),
+    GAME_SHOW("игра"),
+    NEWS("новости"),
+    CONCERT("концерт")
 }

@@ -1,5 +1,6 @@
 package com.darerm1.whatcha.repositories
 
+import android.util.Log
 import com.darerm1.whatcha.data.common.NetworkError
 import com.darerm1.whatcha.data.common.NetworkResult
 import com.darerm1.whatcha.data.interfaces.AllMoviesRepository
@@ -17,47 +18,90 @@ class RemoteMoviesRepository(
     private val cache: MoviesMemoryCache
 ) : AllMoviesRepository {
     
+    companion object {
+        private const val TAG = "RemoteMoviesRepository"
+    }
+    
     private var currentCursor: String? = null
     private var searchQuery: String = ""
     private val isLoading = AtomicBoolean(false)
     
     override suspend fun searchMovies(query: String, limit: Int): NetworkResult<List<MediaItem>> {
+        if (isLoading.get()) {
+            Log.d(TAG, "searchMovies: already loading, skipping")
+            return NetworkResult.Success(emptyList())
+        }
+        
         return withContext(Dispatchers.IO) {
-            searchQuery = query
-            currentCursor = null
-            
-            when (val result = remoteDataSource.searchMovies(query, null, limit)) {
-                is NetworkResult.Success -> {
-                    val movies = result.data.docs.mapNotNull { dto ->
-                        val mapped = MovieMapper.mapDtoToDomain(dto)
-                        if (mapped is Result.Success) mapped.data else null
+            isLoading.set(true)
+            try {
+                Log.d(TAG, "searchMovies: query='$query', limit=$limit")
+                searchQuery = query
+                currentCursor = null
+                
+                when (val result = remoteDataSource.searchMovies(query, null, limit)) {
+                    is NetworkResult.Success -> {
+                        val movies = result.data.docs.mapNotNull { dto ->
+                            val mapped = MovieMapper.mapDtoToDomain(dto)
+                            if (mapped is Result.Success) {
+                                mapped.data
+                            } else {
+                                Log.w(TAG, "Failed to map movie ${dto.id}: ${(mapped as Result.Error).message}")
+                                null
+                            }
+                        }
+                        movies.forEach { cache.put(it.id, it) }
+                        currentCursor = result.data.next
+                        Log.d(TAG, "searchMovies: loaded ${movies.size} movies, nextCursor=$currentCursor")
+                        NetworkResult.Success(movies)
                     }
-                    movies.forEach { cache.put(it.id, it) }
-                    currentCursor = result.data.next
-                    NetworkResult.Success(movies)
+                    is NetworkResult.Error -> {
+                        Log.e(TAG, "searchMovies: error=${result.error}")
+                        result
+                    }
                 }
-                is NetworkResult.Error -> result
+            } finally {
+                isLoading.set(false)
             }
         }
     }
     
     override suspend fun loadMore(): NetworkResult<List<MediaItem>> {
-        if (isLoading.get()) return NetworkResult.Success(emptyList())
+        if (isLoading.get()) {
+            Log.d(TAG, "loadMore: already loading, skipping")
+            return NetworkResult.Success(emptyList())
+        }
+        
+        if (currentCursor == null) {
+            Log.d(TAG, "loadMore: no more data (cursor is null)")
+            return NetworkResult.Success(emptyList())
+        }
         
         return withContext(Dispatchers.IO) {
             isLoading.set(true)
             try {
+                Log.d(TAG, "loadMore: cursor=$currentCursor")
+                
                 when (val result = remoteDataSource.searchMovies(searchQuery, currentCursor, 20)) {
                     is NetworkResult.Success -> {
                         val movies = result.data.docs.mapNotNull { dto ->
                             val mapped = MovieMapper.mapDtoToDomain(dto)
-                            if (mapped is Result.Success) mapped.data else null
+                            if (mapped is Result.Success) {
+                                mapped.data
+                            } else {
+                                Log.w(TAG, "Failed to map movie ${dto.id}: ${(mapped as Result.Error).message}")
+                                null
+                            }
                         }
                         movies.forEach { cache.put(it.id, it) }
                         currentCursor = result.data.next
+                        Log.d(TAG, "loadMore: loaded ${movies.size} movies, nextCursor=$currentCursor")
                         NetworkResult.Success(movies)
                     }
-                    is NetworkResult.Error -> result
+                    is NetworkResult.Error -> {
+                        Log.e(TAG, "loadMore: error=${result.error}")
+                        result
+                    }
                 }
             } finally {
                 isLoading.set(false)

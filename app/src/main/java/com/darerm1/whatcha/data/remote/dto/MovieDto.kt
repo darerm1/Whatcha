@@ -4,6 +4,8 @@ package com.darerm1.whatcha.data.remote.dto
 data class MovieDto(
     val id: Long,
     val name: String?,
+    val alternativeName: String?,
+    val names: List<ItemNameDto>?,
     val year: Int?,
     val description: String?,
     val genres: List<GenreDto>?,

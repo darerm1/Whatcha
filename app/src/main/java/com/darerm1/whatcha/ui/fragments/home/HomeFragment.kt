@@ -41,6 +41,7 @@ class HomeFragment : Fragment() {
     private var currentMovies = mutableListOf<MediaItem>()
     private var searchJob: Job? = null
     private var favoriteIds: Set<Long> = emptySet()
+    private var isInitialLoadDone = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -87,12 +88,17 @@ class HomeFragment : Fragment() {
     }
 
     private fun loadMovies() {
+        if (isInitialLoadDone && currentMovies.isNotEmpty()) {
+            return
+        }
+        
         viewLifecycleOwner.lifecycleScope.launch {
             setLoadingState(true)
             
             when (val result = repository.searchMovies("", limit = 20)) {
                 is NetworkResult.Success -> {
                     setLoadingState(false)
+                    isInitialLoadDone = true
                     if (result.data.isEmpty()) {
                         showEmptyState()
                     } else {
@@ -142,8 +148,11 @@ class HomeFragment : Fragment() {
             
             when (val result = repository.loadMore()) {
                 is NetworkResult.Success -> {
-                    currentMovies.addAll(result.data)
-                    adapter.submitList(currentMovies)
+                    val newMovies = result.data.filter { newMovie ->
+                        currentMovies.none { it.id == newMovie.id }
+                    }
+                    currentMovies.addAll(newMovies)
+                    adapter.submitList(currentMovies.toList())
                     updateLoadMoreButton()
                 }
                 is NetworkResult.Error -> {
