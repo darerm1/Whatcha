@@ -38,14 +38,16 @@ class HomeFragment : Fragment() {
         MovieAdapter(
             onFavoriteClick = { movie -> toggleFavorite(movie) },
             onItemClick = { movie -> (activity as? NavigationListener)?.openDetails(movie.id) },
-            isFavorite = { movieId -> isFavorite(movieId) }
+            isFavorite = { movieId -> isFavorite(movieId) },
+            onLoadMoreClick = { loadMoreMovies() }
         )
     }
 
-    private var currentMovies = mutableListOf<MediaItem>()
+    private val allMovies = mutableListOf<MediaItem>()
     private var searchJob: Job? = null
     private var favoriteIds: Set<Long> = emptySet()
     private var isInitialLoadDone = false
+    private var isSearchMode = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -62,13 +64,21 @@ class HomeFragment : Fragment() {
         refreshFavoriteIds()
         setupRecyclerView()
         setupSearchView()
-        setupLoadMoreButton()
         setupRetryButton()
         loadMovies()
     }
 
     private fun setupRecyclerView() {
-        binding.recyclerView.layoutManager = GridLayoutManager(requireContext(), 3)
+        val layoutManager = GridLayoutManager(requireContext(), 3)
+        layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+            override fun getSpanSize(position: Int): Int {
+                return when (adapter.currentList.getOrNull(position)) {
+                    is ListItem.LoadMoreItem -> 3
+                    else -> 1
+                }
+            }
+        }
+        binding.recyclerView.layoutManager = layoutManager
         binding.recyclerView.adapter = adapter
     }
 
@@ -82,17 +92,13 @@ class HomeFragment : Fragment() {
             }
         })
     }
-
-    private fun setupLoadMoreButton() {
-        binding.btnLoadMore.setOnClickListener { loadMoreMovies() }
-    }
     
     private fun setupRetryButton() {
         binding.retryButton.setOnClickListener { loadMovies() }
     }
 
     private fun loadMovies() {
-        if (isInitialLoadDone && currentMovies.isNotEmpty()) {
+        if (isInitialLoadDone && allMovies.isNotEmpty()) {
             return
         }
         
@@ -110,10 +116,9 @@ class HomeFragment : Fragment() {
                     if (result.data.isEmpty()) {
                         showEmptyState()
                     } else {
-                        currentMovies.clear()
-                        currentMovies.addAll(result.data)
-                        adapter.submitList(currentMovies)
-                        updateLoadMoreButton()
+                        allMovies.clear()
+                        allMovies.addAll(result.data)
+                        updateDisplayList()
                     }
                 }
                 is NetworkResult.Error -> {
@@ -128,39 +133,35 @@ class HomeFragment : Fragment() {
         searchJob?.cancel()
         searchJob = viewLifecycleOwner.lifecycleScope.launch {
             delay(DEBOUNCE_DELAY)
-            setLoadingState(true)
             
-            val result = withContext(Dispatchers.IO) {
-                repository.searchMovies(query, RemoteMoviesRepository.PAGE_SIZE)
-            }
+            isSearchMode = query.isNotEmpty()
             
-            when (result) {
-                is NetworkResult.Success -> {
-                    setLoadingState(false)
-                    currentMovies.clear()
-                    currentMovies.addAll(result.data)
-                    adapter.submitList(currentMovies)
-                    updateLoadMoreButton()
-                    
-                    if (result.data.isEmpty()) {
-                        showEmptyState()
-                    }
+            if (isSearchMode) {
+                val searchQuery = query.lowercase().trim()
+                val filteredMovies = allMovies.filter { movie ->
+                    movie.name.lowercase().contains(searchQuery)
                 }
-                is NetworkResult.Error -> {
-                    setLoadingState(false)
-                    showErrorState(result.error)
+                
+                val listItems = filteredMovies.map { ListItem.MovieItem(it) }
+                adapter.submitList(listItems)
+                
+                if (filteredMovies.isEmpty()) {
+                    showEmptyState()
+                } else {
+                    binding.tvEmpty.isVisible = false
+                    binding.recyclerView.isVisible = true
                 }
+            } else {
+                updateDisplayList()
             }
         }
     }
     
     private fun loadMoreMovies() {
         Log.d("HomeFragment_DEBUG", "=== loadMoreMovies START ===")
-        Log.d("HomeFragment_DEBUG", "currentMovies size before: ${currentMovies.size}")
+        Log.d("HomeFragment_DEBUG", "allMovies size before: ${allMovies.size}")
         
         viewLifecycleOwner.lifecycleScope.launch {
-            binding.btnLoadMore.isEnabled = false
-            
             val result = withContext(Dispatchers.IO) {
                 repository.loadMore()
             }
@@ -171,37 +172,16 @@ class HomeFragment : Fragment() {
                 is NetworkResult.Success -> {
                     Log.d("HomeFragment_DEBUG", "Success: received ${result.data.size} movies from API")
                     
-                    result.data.take(5).forEachIndexed { index, movie ->
-                        Log.d("HomeFragment_DEBUG", "API movie[$index]: id=${movie.id}, name=${movie.name}")
-                    }
-                    
-                    currentMovies.take(5).forEachIndexed { index, movie ->
-                        Log.d("HomeFragment_DEBUG", "Current movie[$index]: id=${movie.id}, name=${movie.name}")
-                    }
-                    
                     val newMovies = result.data.filter { newMovie ->
-                        currentMovies.none { it.id == newMovie.id }
+                        allMovies.none { it.id == newMovie.id }
                     }
                     
                     Log.d("HomeFragment_DEBUG", "After filtering: newMovies size=${newMovies.size}")
                     
-                    if (newMovies.isEmpty()) {
-                        Log.w("HomeFragment_DEBUG", "NO NEW MOVIES - all were duplicates!")
-                    } else {
-                        Log.d("HomeFragment_DEBUG", "Adding ${newMovies.size} new movies")
-                        newMovies.forEach { movie ->
-                            Log.d("HomeFragment_DEBUG", "New movie: id=${movie.id}, name=${movie.name}")
-                        }
-                    }
+                    allMovies.addAll(newMovies)
+                    Log.d("HomeFragment_DEBUG", "allMovies size after: ${allMovies.size}")
                     
-                    currentMovies.addAll(newMovies)
-                    Log.d("HomeFragment_DEBUG", "currentMovies size after: ${currentMovies.size}")
-                    
-                    adapter.submitList(currentMovies.toList()) {
-                        Log.d("HomeFragment_DEBUG", "submitList callback executed")
-                    }
-                    
-                    updateLoadMoreButton()
+                    updateDisplayList()
                 }
                 is NetworkResult.Error -> {
                     Log.e("HomeFragment_DEBUG", "Error: ${result.error}")
@@ -209,9 +189,19 @@ class HomeFragment : Fragment() {
                 }
             }
             
-            binding.btnLoadMore.isEnabled = true
             Log.d("HomeFragment_DEBUG", "=== loadMoreMovies END ===")
         }
+    }
+
+    private fun updateDisplayList() {
+        val listItems = mutableListOf<ListItem>()
+        listItems.addAll(allMovies.map { ListItem.MovieItem(it) })
+        
+        if (!isSearchMode && repository.hasMoreData()) {
+            listItems.add(ListItem.LoadMoreItem)
+        }
+        
+        adapter.submitList(listItems)
     }
 
     private fun toggleFavorite(movie: MediaItem) {
@@ -221,7 +211,12 @@ class HomeFragment : Fragment() {
             movieListService.addMovie(movie)
         }
         refreshFavoriteIds()
-        adapter.notifyItemChanged(currentMovies.indexOf(movie))
+        val position = adapter.currentList.indexOfFirst { 
+            it is ListItem.MovieItem && it.movie.id == movie.id 
+        }
+        if (position >= 0) {
+            adapter.notifyItemChanged(position)
+        }
     }
 
     private fun refreshFavoriteIds() {
@@ -252,12 +247,6 @@ class HomeFragment : Fragment() {
         binding.recyclerView.isVisible = false
         binding.progressBar.isVisible = false
         binding.tvEmpty.isVisible = false
-    }
-    
-    private fun updateLoadMoreButton() {
-        val hasMore = repository.hasMoreData()
-        Log.d("HomeFragment_DEBUG", "updateLoadMoreButton: hasMoreData=$hasMore")
-        binding.btnLoadMore.isVisible = hasMore
     }
     
     private fun showErrorToast(message: String) {
