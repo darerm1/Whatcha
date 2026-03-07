@@ -17,6 +17,8 @@ interface MediaItem {
 
     var personalRating: Int?
 
+    val kpRating: Double?
+
     var date: LocalDate?
 
     val posterUrl: String?

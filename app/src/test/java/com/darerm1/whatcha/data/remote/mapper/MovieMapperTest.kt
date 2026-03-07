@@ -21,8 +21,7 @@ class MovieMapperTest {
             genres = listOf(GenreDto("драма")),
             poster = PosterDto("http://example.com/poster.jpg", null),
             movieLength = 120,
-            rating = RatingDto(kp = 8.5, imdb = 8.0, filmCritics = 7.5, russianFilmCritics = 8.0, await = 9.0),
-            videos = null
+            rating = RatingDto(kp = 8.5, imdb = 8.0, filmCritics = 7.5, russianFilmCritics = 8.0, await = 9.0)
         )
         
         val result = MovieMapper.mapDtoToDomain(dto)
@@ -36,7 +35,8 @@ class MovieMapperTest {
         assertEquals("Test description", movie.description)
         assertEquals("http://example.com/poster.jpg", movie.posterUrl)
         assertEquals(120, movie.duration)
-        assertEquals(8, movie.personalRating)
+        assertNull(movie.personalRating)
+        assertEquals(8.5, movie.kpRating!!, 0.001)
     }
     
     @Test
@@ -51,8 +51,7 @@ class MovieMapperTest {
             genres = listOf(GenreDto("неизвестный жанр")),
             poster = null,
             movieLength = null,
-            rating = null,
-            videos = null
+            rating = null
         )
         
         val result = MovieMapper.mapDtoToDomain(dto)
@@ -74,8 +73,7 @@ class MovieMapperTest {
             genres = listOf(GenreDto("комедия")),
             poster = null,
             movieLength = null,
-            rating = null,
-            videos = null
+            rating = null
         )
         
         val result = MovieMapper.mapDtoToDomain(dto)

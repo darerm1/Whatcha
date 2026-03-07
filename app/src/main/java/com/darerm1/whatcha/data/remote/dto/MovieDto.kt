@@ -11,6 +11,5 @@ data class MovieDto(
     val genres: List<GenreDto>?,
     val poster: PosterDto?,
     val movieLength: Int?,
-    val rating: RatingDto?,
-    val videos: VideoTypesDto?
+    val rating: RatingDto?
 )

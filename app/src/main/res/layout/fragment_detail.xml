@@ -94,6 +94,14 @@
             </LinearLayout>
 
             <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/kpRatingText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="@android:color/darker_gray" />
+
+            <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/metaText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -142,13 +150,6 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:text="@string/set_status" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/trailerButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:text="@string/detail_open_trailer" />
 
         </LinearLayout>
 

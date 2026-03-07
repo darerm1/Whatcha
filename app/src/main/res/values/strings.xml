@@ -28,11 +28,14 @@
     <string name="title_details">Детали</string>
     <string name="detail_not_found">Не удалось открыть элемент</string>
     <string name="detail_meta">%1$d • %2$s • %3$d мин</string>
+    <!-- Rating display -->
+    <string name="rating_kinopoisk">Кинопоиск: %1$.1f</string>
+    <string name="rating_kinopoisk_none">Кинопоиск: —</string>
+    <string name="rating_personal">Мой: %1$d/10</string>
+    <string name="rating_not_set">Не оценен</string>
     <string name="detail_rating_label">Ваша оценка</string>
     <string name="detail_rating_value">Ваша оценка: %1$d</string>
     <string name="detail_rating_not_set">Оценка не задана</string>
-    <string name="detail_open_trailer">Открыть трейлер</string>
-    <string name="detail_trailer_unavailable">Трейлер недоступен</string>
     <string name="detail_added_to_favorites">Добавлено в избранное</string>
     <string name="detail_removed_from_favorites">Удалено из избранного</string>
     <string name="detail_rating_saved">Оценка сохранена</string>

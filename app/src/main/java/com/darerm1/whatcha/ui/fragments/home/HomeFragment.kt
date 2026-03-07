@@ -16,11 +16,14 @@ import com.darerm1.whatcha.data.common.NetworkResult
 import com.darerm1.whatcha.data.interfaces.MediaItem
 import com.darerm1.whatcha.databinding.FragmentHomeBinding
 import com.darerm1.whatcha.infrastructure.MovieListService
+import com.darerm1.whatcha.repositories.RemoteMoviesRepository
 import com.darerm1.whatcha.ui.NavigationListener
 import com.darerm1.whatcha.utils.NetworkErrorHandler
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class HomeFragment : Fragment() {
 
@@ -95,7 +98,11 @@ class HomeFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             setLoadingState(true)
             
-            when (val result = repository.searchMovies("", limit = 20)) {
+            val result = withContext(Dispatchers.IO) {
+                repository.searchMovies("", RemoteMoviesRepository.PAGE_SIZE)
+            }
+            
+            when (result) {
                 is NetworkResult.Success -> {
                     setLoadingState(false)
                     isInitialLoadDone = true
@@ -122,7 +129,11 @@ class HomeFragment : Fragment() {
             delay(DEBOUNCE_DELAY)
             setLoadingState(true)
             
-            when (val result = repository.searchMovies(query, limit = 20)) {
+            val result = withContext(Dispatchers.IO) {
+                repository.searchMovies(query, RemoteMoviesRepository.PAGE_SIZE)
+            }
+            
+            when (result) {
                 is NetworkResult.Success -> {
                     setLoadingState(false)
                     currentMovies.clear()
@@ -146,7 +157,11 @@ class HomeFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             binding.btnLoadMore.isEnabled = false
             
-            when (val result = repository.loadMore()) {
+            val result = withContext(Dispatchers.IO) {
+                repository.loadMore()
+            }
+            
+            when (result) {
                 is NetworkResult.Success -> {
                     val newMovies = result.data.filter { newMovie ->
                         currentMovies.none { it.id == newMovie.id }

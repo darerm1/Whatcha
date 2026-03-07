@@ -33,8 +33,8 @@ object MovieMapper {
                     genre = genre,
                     posterUrl = posterUrl,
                     duration = dto.movieLength ?: 0,
-                    trailerUrl = dto.videos?.trailers?.firstOrNull()?.url ?: "",
-                    personalRating = dto.rating?.kp?.toInt(),
+                    personalRating = null,
+                    kpRating = dto.rating?.kp,
                     status = Status.NOT_SET,
                     date = null
                 )

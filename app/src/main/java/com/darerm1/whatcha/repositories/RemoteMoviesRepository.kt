@@ -12,6 +12,7 @@ import com.darerm1.whatcha.utils.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
 class RemoteMoviesRepository(
     private val remoteDataSource: RemoteMoviesDataSource,
@@ -20,12 +21,13 @@ class RemoteMoviesRepository(
     
     companion object {
         private const val TAG = "RemoteMoviesRepository"
+        const val PAGE_SIZE = 20
     }
     
-     private var currentCursor: String? = null
-     private var searchQuery: String = ""
+     private val currentCursor = AtomicReference<String?>(null)
+     @Volatile private var searchQuery: String = ""
      private val isLoading = AtomicBoolean(false)
-     private var hasNextPage: Boolean = false
+     @Volatile private var hasNextPage: Boolean = false
     
     override suspend fun searchMovies(query: String, limit: Int): NetworkResult<List<MediaItem>> {
         if (isLoading.get()) {
@@ -38,7 +40,7 @@ class RemoteMoviesRepository(
             try {
                 Log.d(TAG, "searchMovies: query='$query', limit=$limit")
                 searchQuery = query
-                currentCursor = null
+                currentCursor.set(null)
                 
                 when (val result = remoteDataSource.searchMovies(query, null, limit)) {
                     is NetworkResult.Success -> {
@@ -52,9 +54,9 @@ class RemoteMoviesRepository(
                             }
                         }
                          movies.forEach { cache.put(it.id, it) }
-                         currentCursor = result.data.next
+                         currentCursor.set(result.data.next)
                          hasNextPage = result.data.hasNext
-                         Log.d(TAG, "searchMovies: loaded ${movies.size} movies, nextCursor=$currentCursor, hasNext=$hasNextPage")
+                         Log.d(TAG, "searchMovies: loaded ${movies.size} movies, nextCursor=${currentCursor.get()}, hasNext=$hasNextPage")
                          NetworkResult.Success(movies)
                     }
                     is NetworkResult.Error -> {
@@ -74,17 +76,18 @@ class RemoteMoviesRepository(
             return NetworkResult.Success(emptyList())
         }
         
-        if (currentCursor == null) {
-            Log.d(TAG, "loadMore: no more data (cursor is null)")
+        val cursor = currentCursor.get()
+        if (cursor == null || !hasNextPage) {
+            Log.d(TAG, "loadMore: no more data (cursor=$cursor, hasNext=$hasNextPage)")
             return NetworkResult.Success(emptyList())
         }
         
         return withContext(Dispatchers.IO) {
             isLoading.set(true)
             try {
-                Log.d(TAG, "loadMore: cursor=$currentCursor")
+                Log.d(TAG, "loadMore: cursor=$cursor")
                 
-                when (val result = remoteDataSource.searchMovies(searchQuery, currentCursor, 20)) {
+                when (val result = remoteDataSource.searchMovies(searchQuery, cursor, PAGE_SIZE)) {
                     is NetworkResult.Success -> {
                         val movies = result.data.docs.mapNotNull { dto ->
                             val mapped = MovieMapper.mapDtoToDomain(dto)
@@ -96,9 +99,9 @@ class RemoteMoviesRepository(
                             }
                         }
                          movies.forEach { cache.put(it.id, it) }
-                         currentCursor = result.data.next
+                         currentCursor.set(result.data.next)
                          hasNextPage = result.data.hasNext
-                         Log.d(TAG, "loadMore: loaded ${movies.size} movies, nextCursor=$currentCursor, hasNext=$hasNextPage")
+                         Log.d(TAG, "loadMore: loaded ${movies.size} movies, nextCursor=${currentCursor.get()}, hasNext=$hasNextPage")
                          NetworkResult.Success(movies)
                     }
                     is NetworkResult.Error -> {
@@ -134,10 +137,10 @@ class RemoteMoviesRepository(
     
      override fun clearCache() {
          cache.clear()
-         currentCursor = null
+         currentCursor.set(null)
          searchQuery = ""
          hasNextPage = false
      }
      
-     override fun hasMoreData(): Boolean = currentCursor != null && hasNextPage
+     override fun hasMoreData(): Boolean = currentCursor.get() != null && hasNextPage
 }

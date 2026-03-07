@@ -86,6 +86,12 @@ class DetailFragment : Fragment() {
         binding.toolbar.title = movie.name
         binding.titleText.text = movie.name
         binding.descriptionText.text = movie.description
+        
+        binding.kpRatingText.text = if (movie.kpRating != null) {
+            "Кинопоиск: ${String.format("%.1f", movie.kpRating)}"
+        } else {
+            "Кинопоиск: —"
+        }
 
         loadPoster(movie.posterUrl)
 

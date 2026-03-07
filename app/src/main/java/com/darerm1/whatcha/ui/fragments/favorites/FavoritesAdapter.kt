@@ -27,10 +27,23 @@ class FavoritesAdapter(
             titleText.text = movie.name
             var message: String = "${movie.year}, ${movie.genre}"
             yearGenreText.text = message
-            ratingText.text = if (movie.personalRating != null) {
-                "Рейтинг: ${movie.personalRating}/10"
+            
+            val kpText = if (movie.kpRating != null) {
+                "Кинопоиск: ${String.format("%.1f", movie.kpRating)}"
             } else {
-                "Рейтинг: не оценен"
+                ""
+            }
+            
+            val personalText = if (movie.personalRating != null) {
+                "Мой: ${movie.personalRating}/10"
+            } else {
+                "Не оценен"
+            }
+            
+            ratingText.text = if (kpText.isNotEmpty()) {
+                "$kpText | $personalText"
+            } else {
+                personalText
             }
 
             val dateText = if (movie.date != null) {

@@ -20,8 +20,8 @@ class MovieListRepositoryTest {
         val initialCount = repository.getMovies().size
         val movie = Movie(
             id = 1, name = "...", year = 2014, genre = Genre.FANTASY,
-            duration = 169, personalRating = 9, status = Status.COMPLETED,
-            description = "...", trailerUrl = "...")
+            duration = 169, personalRating = 9, kpRating = 8.5, status = Status.COMPLETED,
+            description = "...")
 
         repository.addMovie(movie)
 
@@ -32,8 +32,8 @@ class MovieListRepositoryTest {
     fun `removeMovieById should decrease movie count`() {
         val movie = Movie(
             id = 1, name = "...", year = 2014, genre = Genre.FANTASY,
-            duration = 169, personalRating = 9, status = Status.COMPLETED,
-            description = "...", trailerUrl = "...")
+            duration = 169, personalRating = 9, kpRating = 8.5, status = Status.COMPLETED,
+            description = "...")
         repository.addMovie(movie)
         val initialCount = repository.getMovies().size
 
@@ -46,8 +46,8 @@ class MovieListRepositoryTest {
     fun `updateRating should change movie rating`() {
         val movie = Movie(
             id = 1, name = "...", year = 2014, genre = Genre.FANTASY,
-            duration = 169, personalRating = 9, status = Status.COMPLETED,
-            description = "...", trailerUrl = "...")
+            duration = 169, personalRating = 9, kpRating = 8.5, status = Status.COMPLETED,
+            description = "...")
         repository.addMovie(movie)
 
         repository.updateRating(1, 9)
@@ -60,12 +60,12 @@ class MovieListRepositoryTest {
     fun `getMoviesSortedByYear should return sorted list`() {
         val movie1 = Movie(
             id = 1, name = "Old", year = 2000, genre = Genre.FANTASY,
-            duration = 169, personalRating = 9, status = Status.COMPLETED,
-            description = "...", trailerUrl = "...")
+            duration = 169, personalRating = 9, kpRating = 8.5, status = Status.COMPLETED,
+            description = "...")
         val movie2 = Movie(
             id = 2, name = "New", year = 2020, genre = Genre.FANTASY,
-            duration = 169, personalRating = 9, status = Status.COMPLETED,
-            description = "...", trailerUrl = "...")
+            duration = 169, personalRating = 9, kpRating = 8.5, status = Status.COMPLETED,
+            description = "...")
         repository.addMovie(movie2)
         repository.addMovie(movie1)
 

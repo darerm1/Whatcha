@@ -33,6 +33,12 @@ class MovieViewHolder(
 
           binding.tvTitle.text = movie.name
           binding.tvYearGenre.text = "${movie.year}, ${formatGenre(movie.genre.name)}"
+          
+          binding.tvKpRating.text = if (movie.kpRating != null) {
+              "Кинопоиск: ${String.format("%.1f", movie.kpRating)}"
+          } else {
+              ""
+          }
 
           val posterUrl = movie.posterUrl
           if (posterUrl.isNullOrBlank()) {
