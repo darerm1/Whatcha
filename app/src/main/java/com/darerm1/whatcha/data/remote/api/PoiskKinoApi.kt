@@ -13,7 +13,7 @@ interface PoiskKinoApi {
     @GET("/v1.5/movie")
     suspend fun searchMovies(
         @Query("query") query: String?,
-        @Query("cursor") cursor: String?,
+        @Query("next") next: String?,
         @Query("limit") limit: Int = 20
     ): MovieListResponse
 }

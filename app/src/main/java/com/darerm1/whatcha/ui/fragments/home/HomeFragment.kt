@@ -1,6 +1,7 @@
 package com.darerm1.whatcha.ui.fragments.home
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -154,6 +155,9 @@ class HomeFragment : Fragment() {
     }
     
     private fun loadMoreMovies() {
+        Log.d("HomeFragment_DEBUG", "=== loadMoreMovies START ===")
+        Log.d("HomeFragment_DEBUG", "currentMovies size before: ${currentMovies.size}")
+        
         viewLifecycleOwner.lifecycleScope.launch {
             binding.btnLoadMore.isEnabled = false
             
@@ -161,21 +165,52 @@ class HomeFragment : Fragment() {
                 repository.loadMore()
             }
             
+            Log.d("HomeFragment_DEBUG", "result type: ${result::class.simpleName}")
+            
             when (result) {
                 is NetworkResult.Success -> {
+                    Log.d("HomeFragment_DEBUG", "Success: received ${result.data.size} movies from API")
+                    
+                    result.data.take(5).forEachIndexed { index, movie ->
+                        Log.d("HomeFragment_DEBUG", "API movie[$index]: id=${movie.id}, name=${movie.name}")
+                    }
+                    
+                    currentMovies.take(5).forEachIndexed { index, movie ->
+                        Log.d("HomeFragment_DEBUG", "Current movie[$index]: id=${movie.id}, name=${movie.name}")
+                    }
+                    
                     val newMovies = result.data.filter { newMovie ->
                         currentMovies.none { it.id == newMovie.id }
                     }
+                    
+                    Log.d("HomeFragment_DEBUG", "After filtering: newMovies size=${newMovies.size}")
+                    
+                    if (newMovies.isEmpty()) {
+                        Log.w("HomeFragment_DEBUG", "NO NEW MOVIES - all were duplicates!")
+                    } else {
+                        Log.d("HomeFragment_DEBUG", "Adding ${newMovies.size} new movies")
+                        newMovies.forEach { movie ->
+                            Log.d("HomeFragment_DEBUG", "New movie: id=${movie.id}, name=${movie.name}")
+                        }
+                    }
+                    
                     currentMovies.addAll(newMovies)
-                    adapter.submitList(currentMovies.toList())
+                    Log.d("HomeFragment_DEBUG", "currentMovies size after: ${currentMovies.size}")
+                    
+                    adapter.submitList(currentMovies.toList()) {
+                        Log.d("HomeFragment_DEBUG", "submitList callback executed")
+                    }
+                    
                     updateLoadMoreButton()
                 }
                 is NetworkResult.Error -> {
+                    Log.e("HomeFragment_DEBUG", "Error: ${result.error}")
                     showErrorToast(getString(R.string.error_loading, NetworkErrorHandler.getErrorMessage(requireContext(), result.error)))
                 }
             }
             
             binding.btnLoadMore.isEnabled = true
+            Log.d("HomeFragment_DEBUG", "=== loadMoreMovies END ===")
         }
     }
 
@@ -220,7 +255,9 @@ class HomeFragment : Fragment() {
     }
     
     private fun updateLoadMoreButton() {
-        binding.btnLoadMore.isVisible = repository.hasMoreData()
+        val hasMore = repository.hasMoreData()
+        Log.d("HomeFragment_DEBUG", "updateLoadMoreButton: hasMoreData=$hasMore")
+        binding.btnLoadMore.isVisible = hasMore
     }
     
     private fun showErrorToast(message: String) {

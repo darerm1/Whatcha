@@ -15,7 +15,7 @@ class RemoteMoviesDataSource(
         return safeApiCall.execute { api.getMovieById(id) }
     }
     
-    suspend fun searchMovies(query: String?, cursor: String?, limit: Int): NetworkResult<MovieListResponse> {
-        return safeApiCall.execute { api.searchMovies(query, cursor, limit) }
+    suspend fun searchMovies(query: String?, next: String?, limit: Int): NetworkResult<MovieListResponse> {
+        return safeApiCall.execute { api.searchMovies(query, next, limit) }
     }
 }
