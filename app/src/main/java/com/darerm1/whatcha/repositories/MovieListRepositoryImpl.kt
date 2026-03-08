@@ -5,7 +5,7 @@ import com.darerm1.whatcha.data.interfaces.MovieListRepository
 import com.darerm1.whatcha.data.enums.Status
 import java.time.LocalDate
 
-class MovieListRepositoryImpl private constructor(): MovieListRepository {
+class MovieListRepositoryImpl() : MovieListRepository {
     private val movieList = mutableListOf<MediaItem>()
 
     companion object {

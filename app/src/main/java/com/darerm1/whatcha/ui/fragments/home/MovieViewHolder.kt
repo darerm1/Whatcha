@@ -4,6 +4,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import coil.dispose
 import coil.load
 import com.darerm1.whatcha.R
 import com.darerm1.whatcha.data.interfaces.MediaItem
@@ -17,6 +18,7 @@ class MovieViewHolder(
 ) : RecyclerView.ViewHolder(binding.root) {
 
     private var currentMovie: MediaItem? = null
+    private var currentMovieId: Long? = null
 
     init {
         binding.root.setOnClickListener {
@@ -28,33 +30,52 @@ class MovieViewHolder(
         }
     }
 
-    fun bind(movie: MediaItem) {
-        currentMovie = movie
+      fun bind(movie: MediaItem) {
+          currentMovie = movie
+          currentMovieId = movie.id
 
-        binding.tvTitle.text = movie.name
-        binding.tvYearGenre.text = "${movie.year}, ${formatGenre(movie.genre.name)}"
+          binding.tvTitle.text = movie.name
+          binding.tvYearGenre.text = "${movie.year}, ${formatGenre(movie.genre.name)}"
+          
+          binding.tvKpRating.text = if (movie.kpRating != null) {
+              "Кинопоиск: ${String.format("%.1f", movie.kpRating)}"
+          } else {
+              ""
+          }
 
-        val posterUrl = movie.posterUrl
-        if (posterUrl.isNullOrBlank()) {
-            binding.ivPoster.setImageResource(R.drawable.placeholder_poster)
-            binding.tvPlaceholder.visibility = android.view.View.VISIBLE
-        } else {
-            binding.ivPoster.load(posterUrl) {
-                placeholder(R.drawable.placeholder_poster)
-                error(R.drawable.placeholder_poster)
-                listener(
-                    onSuccess = { _, _ ->
-                        binding.tvPlaceholder.visibility = android.view.View.GONE
-                    },
-                    onError = { _, _ ->
-                        binding.tvPlaceholder.visibility = android.view.View.VISIBLE
-                    }
-                )
-            }
-        }
+          // Cancel previous image loading request
+          binding.ivPoster.dispose()
+          
+          val posterUrl = movie.posterUrl
+          if (posterUrl.isNullOrBlank()) {
+              binding.ivPoster.setImageResource(R.drawable.placeholder_poster)
+              binding.tvPlaceholder.visibility = android.view.View.GONE
+          } else {
+              binding.tvPlaceholder.visibility = android.view.View.GONE
+              
+              binding.ivPoster.load(posterUrl) {
+                  crossfade(true)
+                  placeholder(R.drawable.placeholder_poster)
+                  error(R.drawable.placeholder_poster)
+                  listener(
+                      onSuccess = { _, _ ->
+                          // Check if ViewHolder is still showing this movie
+                          if (currentMovieId == movie.id) {
+                              android.util.Log.d("MovieViewHolder", "Poster loaded: ${movie.name}")
+                              binding.tvPlaceholder.visibility = android.view.View.GONE
+                          }
+                      },
+                      onError = { _, error ->
+                          if (currentMovieId == movie.id) {
+                              android.util.Log.e("MovieViewHolder", "Failed to load poster for ${movie.name}: ${error.throwable?.message}")
+                          }
+                      }
+                  )
+              }
+          }
 
-        updateFavoriteIcon(movie.id)
-    }
+          updateFavoriteIcon(movie.id)
+      }
 
     private fun updateFavoriteIcon(movieId: Long) {
         val isFav = isFavorite(movieId)

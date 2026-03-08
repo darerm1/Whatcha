@@ -1,134 +1,207 @@
 package com.darerm1.whatcha.ui.fragments.home
 
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.appcompat.widget.SearchView
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import com.darerm1.whatcha.R
+import com.darerm1.whatcha.WhatchaApplication
+import com.darerm1.whatcha.data.common.NetworkResult
 import com.darerm1.whatcha.data.interfaces.MediaItem
-import com.darerm1.whatcha.infrastructure.AllMoviesService
+import com.darerm1.whatcha.databinding.FragmentHomeBinding
 import com.darerm1.whatcha.infrastructure.MovieListService
-import com.google.android.material.button.MaterialButton
+import com.darerm1.whatcha.repositories.RemoteMoviesRepository
+import com.darerm1.whatcha.ui.NavigationListener
+import com.darerm1.whatcha.utils.NetworkErrorHandler
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class HomeFragment : Fragment() {
 
-    private val allMoviesService = AllMoviesService.instance
-    private val movieListService = MovieListService.instance
+    private var _binding: FragmentHomeBinding? = null
+    private val binding get() = _binding!!
 
+    private val repository by lazy { WhatchaApplication.instance.repository }
+    private val movieListService = MovieListService.instance
+    
     private val adapter by lazy {
         MovieAdapter(
             onFavoriteClick = { movie -> toggleFavorite(movie) },
-            onItemClick = { movie -> (activity as? com.darerm1.whatcha.ui.NavigationListener)?.openDetails(movie.id) },
-            isFavorite = { movieId -> isFavorite(movieId) }
+            onItemClick = { movie -> (activity as? NavigationListener)?.openDetails(movie.id) },
+            isFavorite = { movieId -> isFavorite(movieId) },
+            onLoadMoreClick = { loadMoreMovies() }
         )
     }
 
-    private val movies = mutableListOf<MediaItem>()
-
-    private var currentPage = 1
-
-    private var currentQuery = ""
-
-    private var hasMore = true
-
+    private val allMovies = mutableListOf<MediaItem>()
+    private var searchJob: Job? = null
     private var favoriteIds: Set<Long> = emptySet()
-
-    private var isExpanded = false
-
-    private val debounceHandler = Handler(Looper.getMainLooper())
-
-    private var debounceRunnable: Runnable? = null
-
-    private var recyclerView: androidx.recyclerview.widget.RecyclerView? = null
-
-    private var searchView: SearchView? = null
-
-    private var progressBar: android.widget.ProgressBar? = null
-
-    private var tvEmpty: android.widget.TextView? = null
-
-    private var btnLoadMore: MaterialButton? = null
+    private var isInitialLoadDone = false
+    private var isSearchMode = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        return inflater.inflate(R.layout.fragment_home, container, false)
+        _binding = FragmentHomeBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        recyclerView = view.findViewById(R.id.recyclerView)
-        searchView = view.findViewById(R.id.searchView)
-        progressBar = view.findViewById(R.id.progressBar)
-        tvEmpty = view.findViewById(R.id.tvEmpty)
-        btnLoadMore = view.findViewById(R.id.btnLoadMore)
         
         refreshFavoriteIds()
         setupRecyclerView()
         setupSearchView()
-        setupLoadMoreButton()
+        setupRetryButton()
         loadMovies()
     }
 
     private fun setupRecyclerView() {
-        recyclerView?.layoutManager = GridLayoutManager(requireContext(), 3)
-        recyclerView?.adapter = adapter
+        val layoutManager = GridLayoutManager(requireContext(), 3)
+        layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+            override fun getSpanSize(position: Int): Int {
+                return when (adapter.currentList.getOrNull(position)) {
+                    is ListItem.LoadMoreItem -> 3
+                    else -> 1
+                }
+            }
+        }
+        binding.recyclerView.layoutManager = layoutManager
+        binding.recyclerView.adapter = adapter
     }
 
     private fun setupSearchView() {
-        searchView?.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?): Boolean {
-                return true
-            }
+        binding.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean = true
 
             override fun onQueryTextChange(newText: String?): Boolean {
-                debounceRunnable?.let { debounceHandler.removeCallbacks(it) }
-                debounceRunnable = Runnable {
-                    currentQuery = newText.orEmpty()
-                    currentPage = 1
-                    hasMore = true
-                    isExpanded = false
-                    movies.clear()
-                    adapter.submitList(emptyList())
-                    loadMovies()
-                }
-                debounceHandler.postDelayed(debounceRunnable!!, 300)
+                searchMovies(newText.orEmpty())
                 return true
             }
         })
     }
-
-    private fun setupLoadMoreButton() {
-        btnLoadMore?.setOnClickListener {
-            isExpanded = true
-            btnLoadMore?.visibility = View.GONE
-            loadMovies()
-        }
+    
+    private fun setupRetryButton() {
+        binding.retryButton.setOnClickListener { loadMovies() }
     }
 
     private fun loadMovies() {
-        showLoading(true)
-        
-        val newMovies = allMoviesService.searchMovies(currentQuery, currentPage, PAGE_SIZE)
-        
-        if (newMovies.isNotEmpty()) {
-            movies.addAll(newMovies)
-            adapter.submitList(movies.toList())
-            currentPage++
-            hasMore = newMovies.size == PAGE_SIZE
-        } else {
-            hasMore = false
+        if (isInitialLoadDone && allMovies.isNotEmpty()) {
+            return
         }
+        
+        viewLifecycleOwner.lifecycleScope.launch {
+            setLoadingState(true)
+            
+            val result = withContext(Dispatchers.IO) {
+                repository.searchMovies("", RemoteMoviesRepository.PAGE_SIZE)
+            }
+            
+            when (result) {
+                is NetworkResult.Success -> {
+                    setLoadingState(false)
+                    isInitialLoadDone = true
+                    if (result.data.isEmpty()) {
+                        showEmptyState()
+                    } else {
+                        allMovies.clear()
+                        allMovies.addAll(result.data)
+                        updateDisplayList()
+                    }
+                }
+                is NetworkResult.Error -> {
+                    setLoadingState(false)
+                    showErrorState(result.error)
+                }
+            }
+        }
+    }
+    
+    private fun searchMovies(query: String) {
+        searchJob?.cancel()
+        searchJob = viewLifecycleOwner.lifecycleScope.launch {
+            delay(DEBOUNCE_DELAY)
+            
+            isSearchMode = query.isNotEmpty()
+            
+            if (isSearchMode) {
+                val searchQuery = query.lowercase().trim()
+                val filteredMovies = allMovies.filter { movie ->
+                    movie.name.lowercase().contains(searchQuery)
+                }
+                
+                val listItems = filteredMovies.map { ListItem.MovieItem(it) }
+                adapter.submitList(listItems)
+                
+                if (filteredMovies.isEmpty()) {
+                    showEmptyState()
+                } else {
+                    binding.tvEmpty.isVisible = false
+                    binding.recyclerView.isVisible = true
+                }
+            } else {
+                updateDisplayList()
+            }
+        }
+    }
+    
+    private fun loadMoreMovies() {
+        Log.d("HomeFragment_DEBUG", "=== loadMoreMovies START ===")
+        Log.d("HomeFragment_DEBUG", "allMovies size before: ${allMovies.size}")
+        
+        viewLifecycleOwner.lifecycleScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                repository.loadMore()
+            }
+            
+            Log.d("HomeFragment_DEBUG", "result type: ${result::class.simpleName}")
+            
+            when (result) {
+                is NetworkResult.Success -> {
+                    Log.d("HomeFragment_DEBUG", "Success: received ${result.data.size} movies from API")
+                    
+                    val newMovies = result.data.filter { newMovie ->
+                        allMovies.none { it.id == newMovie.id }
+                    }
+                    
+                    Log.d("HomeFragment_DEBUG", "After filtering: newMovies size=${newMovies.size}")
+                    
+                    allMovies.addAll(newMovies)
+                    Log.d("HomeFragment_DEBUG", "allMovies size after: ${allMovies.size}")
+                    
+                    updateDisplayList()
+                }
+                is NetworkResult.Error -> {
+                    Log.e("HomeFragment_DEBUG", "Error: ${result.error}")
+                    showErrorToast(getString(R.string.error_loading, NetworkErrorHandler.getErrorMessage(requireContext(), result.error)))
+                }
+            }
+            
+            Log.d("HomeFragment_DEBUG", "=== loadMoreMovies END ===")
+        }
+    }
 
-        showLoading(false)
-        updateUi()
+    private fun updateDisplayList() {
+        val listItems = mutableListOf<ListItem>()
+        listItems.addAll(allMovies.map { ListItem.MovieItem(it) })
+        
+        if (!isSearchMode && repository.hasMoreData()) {
+            listItems.add(ListItem.LoadMoreItem)
+        }
+        
+        adapter.submitList(listItems)
     }
 
     private fun toggleFavorite(movie: MediaItem) {
@@ -138,7 +211,12 @@ class HomeFragment : Fragment() {
             movieListService.addMovie(movie)
         }
         refreshFavoriteIds()
-        adapter.notifyItemChanged(movies.indexOf(movie))
+        val position = adapter.currentList.indexOfFirst { 
+            it is ListItem.MovieItem && it.movie.id == movie.id 
+        }
+        if (position >= 0) {
+            adapter.notifyItemChanged(position)
+        }
     }
 
     private fun refreshFavoriteIds() {
@@ -149,28 +227,39 @@ class HomeFragment : Fragment() {
         return favoriteIds.contains(movieId)
     }
 
-    private fun showLoading(show: Boolean) {
-        progressBar?.visibility = if (show) View.VISIBLE else View.GONE
+    private fun setLoadingState(isLoading: Boolean) {
+        binding.progressBar.isVisible = isLoading
+        binding.recyclerView.isVisible = !isLoading
+        binding.errorLayout.isVisible = false
+        binding.tvEmpty.isVisible = false
     }
-
-    private fun updateUi() {
-        tvEmpty?.visibility = if (movies.isEmpty()) View.VISIBLE else View.GONE
-        if (!isExpanded && hasMore && movies.isNotEmpty()) {
-            btnLoadMore?.visibility = View.VISIBLE
-        }
+    
+    private fun showEmptyState() {
+        binding.tvEmpty.isVisible = true
+        binding.recyclerView.isVisible = false
+        binding.progressBar.isVisible = false
+        binding.errorLayout.isVisible = false
+    }
+    
+    private fun showErrorState(error: com.darerm1.whatcha.data.common.NetworkError) {
+        binding.errorText.text = NetworkErrorHandler.getErrorMessage(requireContext(), error)
+        binding.errorLayout.isVisible = true
+        binding.recyclerView.isVisible = false
+        binding.progressBar.isVisible = false
+        binding.tvEmpty.isVisible = false
+    }
+    
+    private fun showErrorToast(message: String) {
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        debounceRunnable?.let { debounceHandler.removeCallbacks(it) }
-        recyclerView = null
-        searchView = null
-        progressBar = null
-        tvEmpty = null
-        btnLoadMore = null
+        searchJob?.cancel()
+        _binding = null
     }
-
+    
     companion object {
-        private const val PAGE_SIZE = 9
+        private const val DEBOUNCE_DELAY = 300L
     }
 }

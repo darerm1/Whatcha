@@ -76,10 +76,12 @@ class MovieListServiceTest {
     @Test
     fun `markAsCompleted should update status to COMPLETED`() {
         val movieId = 1L
+        every { mockRepository.changeDate(movieId, any()) } just runs
         every { mockRepository.changeStatus(movieId, Status.COMPLETED) } just runs
 
         service.markAsCompleted(movieId)
 
+        verify { mockRepository.changeDate(movieId, any()) }
         verify { mockRepository.changeStatus(movieId, Status.COMPLETED) }
     }
 
@@ -87,23 +89,23 @@ class MovieListServiceTest {
     fun `getStatistics should calculate correctly`() {
         val movie1 = Movie(
             id = 1, name = "...", year = 2014, genre = Genre.FANTASY,
-            duration = 169, personalRating = 9, status = Status.COMPLETED,
-            description = "...", trailerUrl = "...")
+            duration = 169, personalRating = 9, kpRating = 8.5, status = Status.COMPLETED,
+            description = "...")
 
         val movie2 = Movie(
             id = 2, name = "...", year = 2010, genre = Genre.THRILLER,
-            duration = 148, personalRating = 8, status = Status.COMPLETED,
-            description = "...", trailerUrl = "...")
+            duration = 148, personalRating = 8, kpRating = 7.5, status = Status.COMPLETED,
+            description = "...")
 
         val movie3 = Movie(
             id = 3, name = "...", year = 2021, genre = Genre.FANTASY,
-            duration = 155, personalRating = null, status = Status.PLANNED,
-            description = "...", trailerUrl = "...")
+            duration = 155, personalRating = null, kpRating = 8.0, status = Status.PLANNED,
+            description = "...")
 
         val movie4 = Movie(
             id = 4, name = "...", year = 2020, genre = Genre.THRILLER,
-            duration = 150, personalRating = 7, status = Status.ABANDONED,
-            description = "...", trailerUrl = "...")
+            duration = 150, personalRating = 7, kpRating = 6.5, status = Status.ABANDONED,
+            description = "...")
 
         val repository = MovieListRepositoryImpl()
         repository.addMovie(movie1)
@@ -123,23 +125,23 @@ class MovieListServiceTest {
     fun `searchMovies should return filtered list`() {
         val movie1 = Movie(
             id = 1, name = "Interstellar", year = 2014, genre = Genre.DRAMA,
-            duration = 169, personalRating = 9, status = Status.COMPLETED,
-            description = "...", trailerUrl = "...")
+            duration = 169, personalRating = 9, kpRating = 8.6, status = Status.COMPLETED,
+            description = "...")
 
         val movie2 = Movie(
             id = 2, name = "Inception", year = 2010, genre = Genre.THRILLER,
-            duration = 148, personalRating = 8, status = Status.COMPLETED,
-            description = "...", trailerUrl = "...")
+            duration = 148, personalRating = 8, kpRating = 8.8, status = Status.COMPLETED,
+            description = "...")
 
         val movie3 = Movie(
             id = 3, name = "Dune", year = 2021, genre = Genre.FANTASY,
-            duration = 155, personalRating = null, status = Status.PLANNED,
-            description = "...", trailerUrl = "...")
+            duration = 155, personalRating = null, kpRating = 7.9, status = Status.PLANNED,
+            description = "...")
 
         val movie4 = Movie(
             id = 4, name = "Tenet", year = 2020, genre = Genre.THRILLER,
-            duration = 150, personalRating = 7, status = Status.ABANDONED,
-            description = "...", trailerUrl = "...")
+            duration = 150, personalRating = 7, kpRating = 7.5, status = Status.ABANDONED,
+            description = "...")
 
         val repository = MovieListRepositoryImpl()
         repository.addMovie(movie1)

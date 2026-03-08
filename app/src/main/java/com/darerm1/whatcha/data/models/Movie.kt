@@ -18,9 +18,9 @@ data class Movie(
 
     val duration: Int,
 
-    val trailerUrl: String,
-
     override var personalRating: Int? = null,
+
+    override val kpRating: Double? = null,
 
     override var status: Status = Status.NOT_SET,
 
@@ -39,8 +39,8 @@ data class Movie(
                 this.genre == other.genre &&
                 this.duration == other.duration &&
                 this.personalRating == other.personalRating &&
+                this.kpRating == other.kpRating &&
                 this.status == other.status &&
-                this.date == other.date &&
-                this.trailerUrl == other.trailerUrl
+                this.date == other.date
     }
 }
