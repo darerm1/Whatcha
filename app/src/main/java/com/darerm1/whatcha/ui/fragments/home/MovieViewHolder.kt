@@ -4,6 +4,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import coil.dispose
 import coil.load
 import com.darerm1.whatcha.R
 import com.darerm1.whatcha.data.interfaces.MediaItem
@@ -17,6 +18,7 @@ class MovieViewHolder(
 ) : RecyclerView.ViewHolder(binding.root) {
 
     private var currentMovie: MediaItem? = null
+    private var currentMovieId: Long? = null
 
     init {
         binding.root.setOnClickListener {
@@ -30,6 +32,7 @@ class MovieViewHolder(
 
       fun bind(movie: MediaItem) {
           currentMovie = movie
+          currentMovieId = movie.id
 
           binding.tvTitle.text = movie.name
           binding.tvYearGenre.text = "${movie.year}, ${formatGenre(movie.genre.name)}"
@@ -40,6 +43,9 @@ class MovieViewHolder(
               ""
           }
 
+          // Cancel previous image loading request
+          binding.ivPoster.dispose()
+          
           val posterUrl = movie.posterUrl
           if (posterUrl.isNullOrBlank()) {
               binding.ivPoster.setImageResource(R.drawable.placeholder_poster)
@@ -48,15 +54,21 @@ class MovieViewHolder(
               binding.tvPlaceholder.visibility = android.view.View.GONE
               
               binding.ivPoster.load(posterUrl) {
+                  crossfade(true)
                   placeholder(R.drawable.placeholder_poster)
                   error(R.drawable.placeholder_poster)
                   listener(
                       onSuccess = { _, _ ->
-                          android.util.Log.d("MovieViewHolder", "Poster loaded successfully for: ${movie.name}")
-                          binding.tvPlaceholder.visibility = android.view.View.GONE
+                          // Check if ViewHolder is still showing this movie
+                          if (currentMovieId == movie.id) {
+                              android.util.Log.d("MovieViewHolder", "Poster loaded: ${movie.name}")
+                              binding.tvPlaceholder.visibility = android.view.View.GONE
+                          }
                       },
                       onError = { _, error ->
-                          android.util.Log.e("MovieViewHolder", "Failed to load poster for ${movie.name}: ${error.throwable?.message}")
+                          if (currentMovieId == movie.id) {
+                              android.util.Log.e("MovieViewHolder", "Failed to load poster for ${movie.name}: ${error.throwable?.message}")
+                          }
                       }
                   )
               }
