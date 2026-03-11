@@ -1,8 +1,8 @@
-package com.darerm1.whatcha.repositories
+﻿package com.darerm1.whatcha.repositories
 
+import com.darerm1.whatcha.data.enums.Status
 import com.darerm1.whatcha.data.interfaces.MediaItem
 import com.darerm1.whatcha.data.interfaces.MovieListRepository
-import com.darerm1.whatcha.data.enums.Status
 import java.time.LocalDate
 
 class MovieListRepositoryImpl() : MovieListRepository {
@@ -39,20 +39,22 @@ class MovieListRepositoryImpl() : MovieListRepository {
     }
 
     override fun getMoviesByStatus(status: Status): List<MediaItem> {
-        return movieList.filter { a -> a.status  == status}
+        return movieList.filter { a -> a.status == status }
     }
 
     override fun getMoviesSortedByYearOrRating(ascending: Boolean, comparator: String): List<MediaItem> {
         return if (ascending) {
-            if (comparator == "year")
+            if (comparator == "year") {
                 movieList.sortedBy { a -> a.year }
-            else
+            } else {
                 movieList.sortedBy { a -> a.personalRating }
+            }
         } else {
-            if (comparator == "year")
+            if (comparator == "year") {
                 movieList.sortedByDescending { a -> a.year }
-            else
+            } else {
                 movieList.sortedByDescending { a -> a.personalRating }
+            }
         }
     }
 
@@ -60,8 +62,7 @@ class MovieListRepositoryImpl() : MovieListRepository {
         val total = movieList.size
         val completed = movieList.count { a -> a.status == Status.COMPLETED }
         val avgRating = movieList
-            .filter { a -> a.personalRating != null }
-            .mapNotNull { a -> a.personalRating }
+            .mapNotNull { a -> a.personalRating?.toDouble() }
             .average()
             .takeIf { a -> !a.isNaN() } ?: 0.0
 
@@ -71,7 +72,7 @@ class MovieListRepositoryImpl() : MovieListRepository {
                 "Average rating: " + avgRating
     }
 
-    override fun updateRating(id: Long, newRating: Int): Boolean {
+    override fun updateRating(id: Long, newRating: Float): Boolean {
         val movie = movieList.find { a -> a.id == id }
         movie?.personalRating = newRating
         if (movie != null && movie.status != Status.COMPLETED) {

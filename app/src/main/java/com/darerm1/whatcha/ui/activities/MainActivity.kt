@@ -1,4 +1,4 @@
-package com.darerm1.whatcha.ui.activities
+﻿package com.darerm1.whatcha.ui.activities
 
 import android.content.Intent
 import android.os.Bundle

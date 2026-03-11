@@ -1,10 +1,12 @@
 package com.darerm1.whatcha.ui.fragments.home
 
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AutoCompleteTextView
 import android.widget.Toast
 import androidx.appcompat.widget.SearchView
 import androidx.core.view.isVisible
@@ -33,7 +35,7 @@ class HomeFragment : Fragment() {
 
     private val repository by lazy { WhatchaApplication.instance.repository }
     private val movieListService = MovieListService.instance
-    
+
     private val adapter by lazy {
         MovieAdapter(
             onFavoriteClick = { movie -> toggleFavorite(movie) },
@@ -60,7 +62,7 @@ class HomeFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        
+
         refreshFavoriteIds()
         setupRecyclerView()
         setupSearchView()
@@ -83,6 +85,11 @@ class HomeFragment : Fragment() {
     }
 
     private fun setupSearchView() {
+        val searchText = binding.searchView.findViewById<AutoCompleteTextView>(androidx.appcompat.R.id.search_src_text)
+        searchText.setTextColor(Color.WHITE)
+        searchText.setHintTextColor(Color.parseColor("#8FFFFFFF"))
+        searchText.textSize = 15f
+
         binding.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean = true
 
@@ -92,7 +99,7 @@ class HomeFragment : Fragment() {
             }
         })
     }
-    
+
     private fun setupRetryButton() {
         binding.retryButton.setOnClickListener { loadMovies() }
     }
@@ -101,14 +108,14 @@ class HomeFragment : Fragment() {
         if (isInitialLoadDone && allMovies.isNotEmpty()) {
             return
         }
-        
+
         viewLifecycleOwner.lifecycleScope.launch {
             setLoadingState(true)
-            
+
             val result = withContext(Dispatchers.IO) {
                 repository.searchMovies("", RemoteMoviesRepository.PAGE_SIZE)
             }
-            
+
             when (result) {
                 is NetworkResult.Success -> {
                     setLoadingState(false)
@@ -128,23 +135,23 @@ class HomeFragment : Fragment() {
             }
         }
     }
-    
+
     private fun searchMovies(query: String) {
         searchJob?.cancel()
         searchJob = viewLifecycleOwner.lifecycleScope.launch {
             delay(DEBOUNCE_DELAY)
-            
+
             isSearchMode = query.isNotEmpty()
-            
+
             if (isSearchMode) {
                 val searchQuery = query.lowercase().trim()
                 val filteredMovies = allMovies.filter { movie ->
                     movie.name.lowercase().contains(searchQuery)
                 }
-                
+
                 val listItems = filteredMovies.map { ListItem.MovieItem(it) }
                 adapter.submitList(listItems)
-                
+
                 if (filteredMovies.isEmpty()) {
                     showEmptyState()
                 } else {
@@ -156,31 +163,31 @@ class HomeFragment : Fragment() {
             }
         }
     }
-    
+
     private fun loadMoreMovies() {
         Log.d("HomeFragment_DEBUG", "=== loadMoreMovies START ===")
         Log.d("HomeFragment_DEBUG", "allMovies size before: ${allMovies.size}")
-        
+
         viewLifecycleOwner.lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) {
                 repository.loadMore()
             }
-            
+
             Log.d("HomeFragment_DEBUG", "result type: ${result::class.simpleName}")
-            
+
             when (result) {
                 is NetworkResult.Success -> {
                     Log.d("HomeFragment_DEBUG", "Success: received ${result.data.size} movies from API")
-                    
+
                     val newMovies = result.data.filter { newMovie ->
                         allMovies.none { it.id == newMovie.id }
                     }
-                    
+
                     Log.d("HomeFragment_DEBUG", "After filtering: newMovies size=${newMovies.size}")
-                    
+
                     allMovies.addAll(newMovies)
                     Log.d("HomeFragment_DEBUG", "allMovies size after: ${allMovies.size}")
-                    
+
                     updateDisplayList()
                 }
                 is NetworkResult.Error -> {
@@ -188,7 +195,7 @@ class HomeFragment : Fragment() {
                     showErrorToast(getString(R.string.error_loading, NetworkErrorHandler.getErrorMessage(requireContext(), result.error)))
                 }
             }
-            
+
             Log.d("HomeFragment_DEBUG", "=== loadMoreMovies END ===")
         }
     }
@@ -196,11 +203,11 @@ class HomeFragment : Fragment() {
     private fun updateDisplayList() {
         val listItems = mutableListOf<ListItem>()
         listItems.addAll(allMovies.map { ListItem.MovieItem(it) })
-        
+
         if (!isSearchMode && repository.hasMoreData()) {
             listItems.add(ListItem.LoadMoreItem)
         }
-        
+
         adapter.submitList(listItems)
     }
 
@@ -211,8 +218,8 @@ class HomeFragment : Fragment() {
             movieListService.addMovie(movie)
         }
         refreshFavoriteIds()
-        val position = adapter.currentList.indexOfFirst { 
-            it is ListItem.MovieItem && it.movie.id == movie.id 
+        val position = adapter.currentList.indexOfFirst {
+            it is ListItem.MovieItem && it.movie.id == movie.id
         }
         if (position >= 0) {
             adapter.notifyItemChanged(position)
@@ -233,14 +240,14 @@ class HomeFragment : Fragment() {
         binding.errorLayout.isVisible = false
         binding.tvEmpty.isVisible = false
     }
-    
+
     private fun showEmptyState() {
         binding.tvEmpty.isVisible = true
         binding.recyclerView.isVisible = false
         binding.progressBar.isVisible = false
         binding.errorLayout.isVisible = false
     }
-    
+
     private fun showErrorState(error: com.darerm1.whatcha.data.common.NetworkError) {
         binding.errorText.text = NetworkErrorHandler.getErrorMessage(requireContext(), error)
         binding.errorLayout.isVisible = true
@@ -248,7 +255,7 @@ class HomeFragment : Fragment() {
         binding.progressBar.isVisible = false
         binding.tvEmpty.isVisible = false
     }
-    
+
     private fun showErrorToast(message: String) {
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
     }
@@ -258,7 +265,7 @@ class HomeFragment : Fragment() {
         searchJob?.cancel()
         _binding = null
     }
-    
+
     companion object {
         private const val DEBOUNCE_DELAY = 300L
     }

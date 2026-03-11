@@ -10,9 +10,9 @@
         android:id="@+id/toolbar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
         app:navigationIcon="@drawable/ic_arrow_back"
         app:title="@string/title_profile" />
 
@@ -22,15 +22,15 @@
         android:layout_height="0dp"
         android:fillViewport="true"
         android:scrollbars="vertical"
-        app:layout_constraintTop_toBottomOf="@id/toolbar"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintTop_toBottomOf="@id/toolbar">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingBottom="16dp">
+            android:paddingBottom="20dp">
 
             <com.google.android.material.imageview.ShapeableImageView
                 android:id="@+id/avatarImage"
@@ -38,13 +38,16 @@
                 android:layout_height="104dp"
                 android:layout_marginTop="24dp"
                 android:clickable="true"
-                android:focusable="true"
                 android:contentDescription="@string/cd_profile_avatar"
+                android:focusable="true"
+                android:scaleType="centerCrop"
                 android:src="@drawable/ic_avatar"
-                app:tint="?attr/colorOnSurface"
-                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent" />
+                app:layout_constraintTop_toTopOf="parent"
+                app:shapeAppearanceOverlay="@style/WhatchaAvatarShape"
+                app:strokeColor="#22FFFFFF"
+                app:strokeWidth="1dp" />
 
             <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:id="@+id/editAvatarFab"
@@ -53,15 +56,14 @@
                 android:layout_marginEnd="-6dp"
                 android:layout_marginBottom="-6dp"
                 android:contentDescription="@string/cd_edit_avatar"
-                app:srcCompat="@drawable/ic_camera"
+                app:fabCustomSize="32dp"
+                app:fabSize="mini"
                 app:layout_constraintBottom_toBottomOf="@id/avatarImage"
                 app:layout_constraintEnd_toEndOf="@id/avatarImage"
-                app:useCompatPadding="false"
-                app:fabSize="mini"
-                app:fabCustomSize="32dp"
-                app:maxImageSize="18dp" />
+                app:maxImageSize="18dp"
+                app:srcCompat="@drawable/ic_camera"
+                app:useCompatPadding="false" />
 
-            <!-- Nickname row (text + pencil) -->
             <LinearLayout
                 android:id="@+id/nicknameRow"
                 android:layout_width="0dp"
@@ -69,9 +71,9 @@
                 android:layout_marginTop="12dp"
                 android:gravity="center"
                 android:orientation="horizontal"
-                app:layout_constraintTop_toBottomOf="@id/avatarImage"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent">
+                app:layout_constraintTop_toBottomOf="@id/avatarImage">
 
                 <com.google.android.material.textview.MaterialTextView
                     android:id="@+id/nicknameText"
@@ -91,16 +93,35 @@
 
             </LinearLayout>
 
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/profileSubtitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="32dp"
+                android:layout_marginTop="6dp"
+                android:layout_marginEnd="32dp"
+                android:gravity="center"
+                android:textAlignment="center"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="#BEB9D8"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/nicknameRow" />
+
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/statsCard"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
+                android:layout_marginTop="20dp"
                 android:layout_marginEnd="16dp"
-                android:layout_marginTop="18dp"
-                app:layout_constraintTop_toBottomOf="@id/nicknameRow"
+                app:cardCornerRadius="22dp"
+                app:cardElevation="0dp"
+                app:strokeColor="#1FFFFFFF"
+                app:strokeWidth="1dp"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent">
+                app:layout_constraintTop_toBottomOf="@id/profileSubtitle">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -109,17 +130,256 @@
                     android:padding="16dp">
 
                     <com.google.android.material.textview.MaterialTextView
-                        android:id="@+id/favoritesCount"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:textAppearance="?attr/textAppearanceBodyLarge" />
+                        android:text="&#x41e;&#x431;&#x437;&#x43e;&#x440;"
+                        android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:orientation="horizontal"
+                        android:weightSum="3">
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="8dp"
+                            android:layout_weight="1"
+                            app:cardCornerRadius="18dp"
+                            app:cardElevation="0dp"
+                            app:strokeColor="#16FFFFFF"
+                            app:strokeWidth="1dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="12dp">
+
+                                <com.google.android.material.textview.MaterialTextView
+                                    android:id="@+id/statFavoritesValue"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:textAppearance="?attr/textAppearanceTitleLarge" />
+
+                                <com.google.android.material.textview.MaterialTextView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:text="&#x418;&#x437;&#x431;&#x440;&#x430;&#x43d;&#x43d;&#x43e;&#x435;"
+                                    android:textAppearance="?attr/textAppearanceBodySmall"
+                                    android:textColor="#BEB9D8" />
+
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginHorizontal="4dp"
+                            android:layout_weight="1"
+                            app:cardCornerRadius="18dp"
+                            app:cardElevation="0dp"
+                            app:strokeColor="#16FFFFFF"
+                            app:strokeWidth="1dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="12dp">
+
+                                <com.google.android.material.textview.MaterialTextView
+                                    android:id="@+id/statAverageValue"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:textAppearance="?attr/textAppearanceTitleLarge" />
+
+                                <com.google.android.material.textview.MaterialTextView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:text="&#x421;&#x440;&#x435;&#x434;&#x43d;&#x438;&#x439; &#x440;&#x435;&#x439;&#x442;&#x438;&#x43d;&#x433;"
+                                    android:textAppearance="?attr/textAppearanceBodySmall"
+                                    android:textColor="#BEB9D8" />
+
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            app:cardCornerRadius="18dp"
+                            app:cardElevation="0dp"
+                            app:strokeColor="#16FFFFFF"
+                            app:strokeWidth="1dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="12dp">
+
+                                <com.google.android.material.textview.MaterialTextView
+                                    android:id="@+id/statRatedValue"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:textAppearance="?attr/textAppearanceTitleLarge" />
+
+                                <com.google.android.material.textview.MaterialTextView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:text="&#x41e;&#x446;&#x435;&#x43d;&#x435;&#x43d;&#x43e;"
+                                    android:textAppearance="?attr/textAppearanceBodySmall"
+                                    android:textColor="#BEB9D8" />
+
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/statusCard"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="14dp"
+                android:layout_marginEnd="16dp"
+                app:cardCornerRadius="22dp"
+                app:cardElevation="0dp"
+                app:strokeColor="#1FFFFFFF"
+                app:strokeWidth="1dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/statsCard">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
                     <com.google.android.material.textview.MaterialTextView
-                        android:id="@+id/averageRating"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:textAppearance="?attr/textAppearanceBodyLarge" />
+                        android:text="&#x421;&#x442;&#x430;&#x442;&#x443;&#x441;&#x44b;"
+                        android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:orientation="horizontal"
+                        android:weightSum="3">
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="8dp"
+                            android:layout_weight="1"
+                            app:cardCornerRadius="18dp"
+                            app:cardElevation="0dp"
+                            app:strokeColor="#16FFFFFF"
+                            app:strokeWidth="1dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="12dp">
+
+                                <com.google.android.material.textview.MaterialTextView
+                                    android:id="@+id/statPlannedValue"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:textAppearance="?attr/textAppearanceTitleLarge" />
+
+                                <com.google.android.material.textview.MaterialTextView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:text="&#x417;&#x430;&#x43f;&#x43b;&#x430;&#x43d;&#x438;&#x440;&#x43e;&#x432;&#x430;&#x43d;&#x43e;"
+                                    android:textAppearance="?attr/textAppearanceBodySmall"
+                                    android:textColor="#BEB9D8" />
+
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginHorizontal="4dp"
+                            android:layout_weight="1"
+                            app:cardCornerRadius="18dp"
+                            app:cardElevation="0dp"
+                            app:strokeColor="#16FFFFFF"
+                            app:strokeWidth="1dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="12dp">
+
+                                <com.google.android.material.textview.MaterialTextView
+                                    android:id="@+id/statCompletedValue"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:textAppearance="?attr/textAppearanceTitleLarge" />
+
+                                <com.google.android.material.textview.MaterialTextView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:text="&#x41f;&#x440;&#x43e;&#x441;&#x43c;&#x43e;&#x442;&#x440;&#x435;&#x43d;&#x43e;"
+                                    android:textAppearance="?attr/textAppearanceBodySmall"
+                                    android:textColor="#BEB9D8" />
+
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            app:cardCornerRadius="18dp"
+                            app:cardElevation="0dp"
+                            app:strokeColor="#16FFFFFF"
+                            app:strokeWidth="1dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="12dp">
+
+                                <com.google.android.material.textview.MaterialTextView
+                                    android:id="@+id/statAbandonedValue"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:textAppearance="?attr/textAppearanceTitleLarge" />
+
+                                <com.google.android.material.textview.MaterialTextView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:text="&#x411;&#x440;&#x43e;&#x448;&#x435;&#x43d;&#x43e;"
+                                    android:textAppearance="?attr/textAppearanceBodySmall"
+                                    android:textColor="#BEB9D8" />
+
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                    </LinearLayout>
 
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -129,11 +389,15 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
-                android:layout_marginEnd="16dp"
                 android:layout_marginTop="14dp"
-                app:layout_constraintTop_toBottomOf="@id/statsCard"
+                android:layout_marginEnd="16dp"
+                app:cardCornerRadius="22dp"
+                app:cardElevation="0dp"
+                app:strokeColor="#1FFFFFFF"
+                app:strokeWidth="1dp"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent">
+                app:layout_constraintTop_toBottomOf="@id/statusCard">
 
                 <LinearLayout
                     android:layout_width="match_parent"

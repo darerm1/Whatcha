@@ -1,17 +1,23 @@
 package com.darerm1.whatcha.ui.activities
 
 import android.content.Context
+import android.content.res.ColorStateList
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import coil.load
+import coil.transform.CircleCropTransformation
 import com.darerm1.whatcha.R
+import com.darerm1.whatcha.data.enums.Status
 import com.darerm1.whatcha.databinding.ActivityProfileBinding
 import com.darerm1.whatcha.infrastructure.MovieListService
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import java.util.Locale
 
 class ProfileActivity : AppCompatActivity() {
 
@@ -65,11 +71,22 @@ class ProfileActivity : AppCompatActivity() {
     private fun renderAvatar() {
         val uriString = prefs.getString(KEY_AVATAR_URI, null)
         if (uriString.isNullOrBlank()) {
+            binding.avatarImage.imageTintList = ColorStateList.valueOf(
+                MaterialColors.getColor(binding.avatarImage, com.google.android.material.R.attr.colorOnSurface)
+            )
+            binding.avatarImage.scaleType = android.widget.ImageView.ScaleType.CENTER_INSIDE
             binding.avatarImage.setImageResource(R.drawable.ic_avatar)
             return
         }
-        val uri = Uri.parse(uriString)
-        binding.avatarImage.setImageURI(uri)
+
+        binding.avatarImage.imageTintList = null
+        binding.avatarImage.scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
+        binding.avatarImage.load(Uri.parse(uriString)) {
+            crossfade(true)
+            placeholder(R.drawable.ic_avatar)
+            error(R.drawable.ic_avatar)
+            transformations(CircleCropTransformation())
+        }
     }
 
     private fun renderNickname() {
@@ -83,16 +100,28 @@ class ProfileActivity : AppCompatActivity() {
 
     private fun renderStats() {
         val movies = movieListService.getMovies()
-        val count = movies.size
-        val rated = movies.mapNotNull { it.personalRating }
-        val avg = if (rated.isNotEmpty()) rated.average() else null
+        val favoritesCount = movies.size
+        val rated = movies.mapNotNull { it.personalRating?.toDouble() }
+        val averageRating = if (rated.isNotEmpty()) rated.average() else null
+        val ratedCount = rated.size
+        val plannedCount = movies.count { it.status == Status.PLANNED }
+        val completedCount = movies.count { it.status == Status.COMPLETED }
+        val abandonedCount = movies.count { it.status == Status.ABANDONED }
 
-        binding.favoritesCount.text = getString(R.string.profile_favorites_count, count)
-        binding.averageRating.text = if (avg == null) {
-            getString(R.string.profile_average_rating, 0.0)
+        binding.profileSubtitle.text = if (favoritesCount == 0) {
+            PROFILE_EMPTY_HINT
         } else {
-            getString(R.string.profile_average_rating, avg)
+            PROFILE_FILLED_HINT
         }
+
+        binding.statFavoritesValue.text = favoritesCount.toString()
+        binding.statAverageValue.text = averageRating?.let {
+            String.format(Locale.US, "%.1f", it)
+        } ?: DASH
+        binding.statRatedValue.text = ratedCount.toString()
+        binding.statPlannedValue.text = plannedCount.toString()
+        binding.statCompletedValue.text = completedCount.toString()
+        binding.statAbandonedValue.text = abandonedCount.toString()
     }
 
     private fun showEditNicknameDialog() {
@@ -156,5 +185,9 @@ class ProfileActivity : AppCompatActivity() {
         private const val THEME_SYSTEM = 0
         private const val THEME_LIGHT = 1
         private const val THEME_DARK = 2
+
+        private const val DASH = "\u2014"
+        private const val PROFILE_EMPTY_HINT = "\u0414\u043e\u0431\u0430\u0432\u044c \u043f\u0435\u0440\u0432\u044b\u0435 \u0444\u0438\u043b\u044c\u043c\u044b \u0432 \u0438\u0437\u0431\u0440\u0430\u043d\u043d\u043e\u0435, \u0447\u0442\u043e\u0431\u044b \u0441\u043e\u0431\u0440\u0430\u0442\u044c \u0441\u0432\u043e\u044e \u043a\u043e\u043b\u043b\u0435\u043a\u0446\u0438\u044e."
+        private const val PROFILE_FILLED_HINT = "\u0412\u0441\u0435 \u043e\u0441\u043d\u043e\u0432\u043d\u044b\u0435 \u043c\u0435\u0442\u0440\u0438\u043a\u0438 \u043a\u043e\u043b\u043b\u0435\u043a\u0446\u0438\u0438 \u0441\u043e\u0431\u0440\u0430\u043d\u044b \u0437\u0434\u0435\u0441\u044c."
     }
 }

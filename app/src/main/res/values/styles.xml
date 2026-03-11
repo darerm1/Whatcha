@@ -1,0 +1,6 @@
+<resources>
+    <style name="WhatchaAvatarShape">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">52dp</item>
+    </style>
+</resources>
