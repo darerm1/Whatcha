@@ -1,8 +1,12 @@
-﻿package com.darerm1.whatcha.ui.activities
+package com.darerm1.whatcha.ui.activities
 
 import android.content.Intent
+import android.content.res.Configuration
+import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
 import com.darerm1.whatcha.R
 import com.darerm1.whatcha.ui.NavigationListener
 import com.darerm1.whatcha.ui.fragments.details.DetailFragment
@@ -14,6 +18,7 @@ class MainActivity : AppCompatActivity(), NavigationListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        applyNavigationBarStyle()
 
         if (savedInstanceState == null) {
             openHome()
@@ -35,6 +40,16 @@ class MainActivity : AppCompatActivity(), NavigationListener {
                 }
                 else -> false
             }
+        }
+    }
+
+    private fun applyNavigationBarStyle() {
+        val isDarkTheme = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+            Configuration.UI_MODE_NIGHT_YES
+        window.navigationBarColor = if (isDarkTheme) Color.BLACK else Color.WHITE
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightNavigationBars = !isDarkTheme
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
         }
     }
 

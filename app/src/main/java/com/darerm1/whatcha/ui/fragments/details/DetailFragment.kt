@@ -1,13 +1,20 @@
 package com.darerm1.whatcha.ui.fragments.details
 
+import android.app.Dialog
 import android.content.res.ColorStateList
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.util.Log
 import android.util.TypedValue
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.PopupMenu
+import androidx.appcompat.widget.AppCompatImageView
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -26,6 +33,7 @@ import com.darerm1.whatcha.utils.RatingFormatter
 import com.darerm1.whatcha.utils.Result
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 class DetailFragment : Fragment() {
 
@@ -36,6 +44,7 @@ class DetailFragment : Fragment() {
     private val movieListService = MovieListService.instance
 
     private var movieId: Long = -1L
+    private var currentPosterUrl: String? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -65,8 +74,46 @@ class DetailFragment : Fragment() {
         binding.saveRatingButton.setOnClickListener { updateRating(binding.ratingStars.rating) }
         binding.statusButton.setOnClickListener { showStatusMenu() }
         binding.retryButton.setOnClickListener { loadMovie() }
+        binding.posterImage.setOnClickListener { showPosterPreview() }
 
         loadMovie()
+    }
+
+    private fun showPosterPreview() {
+        val context = requireContext()
+        val dialog = Dialog(context, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+        val overlay = FrameLayout(context).apply {
+            setBackgroundColor(0x88000000.toInt())
+            setOnClickListener { dialog.dismiss() }
+        }
+        val padding = 24.dp
+        val imageView = AppCompatImageView(context).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                Gravity.CENTER
+            )
+            adjustViewBounds = true
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            setPadding(padding, padding, padding, padding)
+            setOnClickListener { dialog.dismiss() }
+        }
+
+        val posterUrl = currentPosterUrl
+        if (posterUrl.isNullOrBlank()) {
+            imageView.setImageResource(R.drawable.poster_placeholder_branded)
+        } else {
+            imageView.load(posterUrl) {
+                placeholder(R.drawable.poster_placeholder_branded)
+                error(R.drawable.poster_placeholder_branded)
+            }
+        }
+
+        overlay.addView(imageView)
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        dialog.window?.setDimAmount(0f)
+        dialog.setContentView(overlay)
+        dialog.show()
     }
 
     private fun loadMovie() {
@@ -128,6 +175,7 @@ class DetailFragment : Fragment() {
     }
 
     private fun loadPoster(posterUrl: String?) {
+        currentPosterUrl = posterUrl
         if (posterUrl.isNullOrBlank()) {
             binding.posterImage.setImageResource(R.drawable.poster_placeholder_branded)
         } else {
@@ -289,6 +337,9 @@ class DetailFragment : Fragment() {
         requireContext().theme.resolveAttribute(attr, typedValue, true)
         return typedValue.data
     }
+
+    private val Int.dp: Int
+        get() = (this * resources.displayMetrics.density).roundToInt()
 
     override fun onDestroyView() {
         super.onDestroyView()

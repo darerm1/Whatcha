@@ -1,8 +1,12 @@
 package com.darerm1.whatcha.ui.activities
 
 import android.content.Intent
+import android.content.res.Configuration
+import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import com.darerm1.whatcha.R
 import com.darerm1.whatcha.databinding.ActivitySplashBinding
@@ -20,6 +24,7 @@ class SplashActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySplashBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyNavigationBarStyle()
 
         setupGreeting()
         animateContent()
@@ -28,6 +33,16 @@ class SplashActivity : AppCompatActivity() {
             delay(SPLASH_DURATION_MS)
             startActivity(Intent(this@SplashActivity, MainActivity::class.java))
             finish()
+        }
+    }
+
+    private fun applyNavigationBarStyle() {
+        val isDarkTheme = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+            Configuration.UI_MODE_NIGHT_YES
+        window.navigationBarColor = if (isDarkTheme) Color.BLACK else Color.WHITE
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightNavigationBars = !isDarkTheme
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
         }
     }
 

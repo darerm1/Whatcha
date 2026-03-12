@@ -2,11 +2,15 @@ package com.darerm1.whatcha.ui.activities
 
 import android.content.Context
 import android.content.res.ColorStateList
+import android.content.res.Configuration
+import android.graphics.Color
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.view.WindowCompat
 import coil.load
 import coil.transform.CircleCropTransformation
 import com.darerm1.whatcha.R
@@ -46,6 +50,7 @@ class ProfileActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityProfileBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyNavigationBarStyle()
 
         binding.toolbar.setNavigationOnClickListener {
             finish()
@@ -62,6 +67,16 @@ class ProfileActivity : AppCompatActivity() {
         renderNickname()
         renderAvatar()
         renderStats()
+    }
+
+    private fun applyNavigationBarStyle() {
+        val isDarkTheme = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+            Configuration.UI_MODE_NIGHT_YES
+        window.navigationBarColor = if (isDarkTheme) Color.BLACK else Color.WHITE
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightNavigationBars = !isDarkTheme
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
+        }
     }
 
     private fun pickAvatar() {

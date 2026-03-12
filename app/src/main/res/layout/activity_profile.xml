@@ -46,7 +46,7 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 app:shapeAppearanceOverlay="@style/WhatchaAvatarShape"
-                app:strokeColor="#22FFFFFF"
+                app:strokeColor="?attr/colorOutlineVariant"
                 app:strokeWidth="1dp" />
 
             <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -103,7 +103,7 @@
                 android:gravity="center"
                 android:textAlignment="center"
                 android:textAppearance="?attr/textAppearanceBodyMedium"
-                android:textColor="#BEB9D8"
+                android:textColor="?attr/colorOnSurfaceVariant"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/nicknameRow" />
@@ -115,13 +115,14 @@
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="20dp"
                 android:layout_marginEnd="16dp"
+                app:cardBackgroundColor="?attr/colorSurface"
                 app:cardCornerRadius="22dp"
                 app:cardElevation="0dp"
-                app:strokeColor="#1FFFFFFF"
-                app:strokeWidth="1dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/profileSubtitle">
+                app:layout_constraintTop_toBottomOf="@id/profileSubtitle"
+                app:strokeColor="?attr/colorOutlineVariant"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -147,9 +148,10 @@
                             android:layout_height="wrap_content"
                             android:layout_marginEnd="8dp"
                             android:layout_weight="1"
+                            app:cardBackgroundColor="?attr/colorSurface"
                             app:cardCornerRadius="18dp"
                             app:cardElevation="0dp"
-                            app:strokeColor="#16FFFFFF"
+                            app:strokeColor="?attr/colorOutlineVariant"
                             app:strokeWidth="1dp">
 
                             <LinearLayout
@@ -170,7 +172,7 @@
                                     android:layout_marginTop="4dp"
                                     android:text="&#x418;&#x437;&#x431;&#x440;&#x430;&#x43d;&#x43d;&#x43e;&#x435;"
                                     android:textAppearance="?attr/textAppearanceBodySmall"
-                                    android:textColor="#BEB9D8" />
+                                    android:textColor="?attr/colorOnSurfaceVariant" />
 
                             </LinearLayout>
                         </com.google.android.material.card.MaterialCardView>
@@ -180,9 +182,10 @@
                             android:layout_height="wrap_content"
                             android:layout_marginHorizontal="4dp"
                             android:layout_weight="1"
+                            app:cardBackgroundColor="?attr/colorSurface"
                             app:cardCornerRadius="18dp"
                             app:cardElevation="0dp"
-                            app:strokeColor="#16FFFFFF"
+                            app:strokeColor="?attr/colorOutlineVariant"
                             app:strokeWidth="1dp">
 
                             <LinearLayout
@@ -203,7 +206,7 @@
                                     android:layout_marginTop="4dp"
                                     android:text="&#x421;&#x440;&#x435;&#x434;&#x43d;&#x438;&#x439; &#x440;&#x435;&#x439;&#x442;&#x438;&#x43d;&#x433;"
                                     android:textAppearance="?attr/textAppearanceBodySmall"
-                                    android:textColor="#BEB9D8" />
+                                    android:textColor="?attr/colorOnSurfaceVariant" />
 
                             </LinearLayout>
                         </com.google.android.material.card.MaterialCardView>
@@ -213,9 +216,10 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
                             android:layout_weight="1"
+                            app:cardBackgroundColor="?attr/colorSurface"
                             app:cardCornerRadius="18dp"
                             app:cardElevation="0dp"
-                            app:strokeColor="#16FFFFFF"
+                            app:strokeColor="?attr/colorOutlineVariant"
                             app:strokeWidth="1dp">
 
                             <LinearLayout
@@ -236,7 +240,7 @@
                                     android:layout_marginTop="4dp"
                                     android:text="&#x41e;&#x446;&#x435;&#x43d;&#x435;&#x43d;&#x43e;"
                                     android:textAppearance="?attr/textAppearanceBodySmall"
-                                    android:textColor="#BEB9D8" />
+                                    android:textColor="?attr/colorOnSurfaceVariant" />
 
                             </LinearLayout>
                         </com.google.android.material.card.MaterialCardView>
@@ -253,13 +257,14 @@
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="14dp"
                 android:layout_marginEnd="16dp"
+                app:cardBackgroundColor="?attr/colorSurface"
                 app:cardCornerRadius="22dp"
                 app:cardElevation="0dp"
-                app:strokeColor="#1FFFFFFF"
-                app:strokeWidth="1dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/statsCard">
+                app:layout_constraintTop_toBottomOf="@id/statsCard"
+                app:strokeColor="?attr/colorOutlineVariant"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -285,9 +290,10 @@
                             android:layout_height="wrap_content"
                             android:layout_marginEnd="8dp"
                             android:layout_weight="1"
+                            app:cardBackgroundColor="?attr/colorSurface"
                             app:cardCornerRadius="18dp"
                             app:cardElevation="0dp"
-                            app:strokeColor="#16FFFFFF"
+                            app:strokeColor="?attr/colorOutlineVariant"
                             app:strokeWidth="1dp">
 
                             <LinearLayout
@@ -308,7 +314,7 @@
                                     android:layout_marginTop="4dp"
                                     android:text="&#x417;&#x430;&#x43f;&#x43b;&#x430;&#x43d;&#x438;&#x440;&#x43e;&#x432;&#x430;&#x43d;&#x43e;"
                                     android:textAppearance="?attr/textAppearanceBodySmall"
-                                    android:textColor="#BEB9D8" />
+                                    android:textColor="?attr/colorOnSurfaceVariant" />
 
                             </LinearLayout>
                         </com.google.android.material.card.MaterialCardView>
@@ -318,9 +324,10 @@
                             android:layout_height="wrap_content"
                             android:layout_marginHorizontal="4dp"
                             android:layout_weight="1"
+                            app:cardBackgroundColor="?attr/colorSurface"
                             app:cardCornerRadius="18dp"
                             app:cardElevation="0dp"
-                            app:strokeColor="#16FFFFFF"
+                            app:strokeColor="?attr/colorOutlineVariant"
                             app:strokeWidth="1dp">
 
                             <LinearLayout
@@ -341,7 +348,7 @@
                                     android:layout_marginTop="4dp"
                                     android:text="&#x41f;&#x440;&#x43e;&#x441;&#x43c;&#x43e;&#x442;&#x440;&#x435;&#x43d;&#x43e;"
                                     android:textAppearance="?attr/textAppearanceBodySmall"
-                                    android:textColor="#BEB9D8" />
+                                    android:textColor="?attr/colorOnSurfaceVariant" />
 
                             </LinearLayout>
                         </com.google.android.material.card.MaterialCardView>
@@ -351,9 +358,10 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
                             android:layout_weight="1"
+                            app:cardBackgroundColor="?attr/colorSurface"
                             app:cardCornerRadius="18dp"
                             app:cardElevation="0dp"
-                            app:strokeColor="#16FFFFFF"
+                            app:strokeColor="?attr/colorOutlineVariant"
                             app:strokeWidth="1dp">
 
                             <LinearLayout
@@ -374,7 +382,7 @@
                                     android:layout_marginTop="4dp"
                                     android:text="&#x411;&#x440;&#x43e;&#x448;&#x435;&#x43d;&#x43e;"
                                     android:textAppearance="?attr/textAppearanceBodySmall"
-                                    android:textColor="#BEB9D8" />
+                                    android:textColor="?attr/colorOnSurfaceVariant" />
 
                             </LinearLayout>
                         </com.google.android.material.card.MaterialCardView>
@@ -391,13 +399,14 @@
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="14dp"
                 android:layout_marginEnd="16dp"
+                app:cardBackgroundColor="?attr/colorSurface"
                 app:cardCornerRadius="22dp"
                 app:cardElevation="0dp"
-                app:strokeColor="#1FFFFFFF"
-                app:strokeWidth="1dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/statusCard">
+                app:layout_constraintTop_toBottomOf="@id/statusCard"
+                app:strokeColor="?attr/colorOutlineVariant"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"

@@ -1,6 +1,5 @@
 package com.darerm1.whatcha.ui.fragments.home
 
-import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -22,6 +21,7 @@ import com.darerm1.whatcha.infrastructure.MovieListService
 import com.darerm1.whatcha.repositories.RemoteMoviesRepository
 import com.darerm1.whatcha.ui.NavigationListener
 import com.darerm1.whatcha.utils.NetworkErrorHandler
+import com.google.android.material.color.MaterialColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -86,8 +86,12 @@ class HomeFragment : Fragment() {
 
     private fun setupSearchView() {
         val searchText = binding.searchView.findViewById<AutoCompleteTextView>(androidx.appcompat.R.id.search_src_text)
-        searchText.setTextColor(Color.WHITE)
-        searchText.setHintTextColor(Color.parseColor("#8FFFFFFF"))
+        searchText.setTextColor(
+            MaterialColors.getColor(searchText, com.google.android.material.R.attr.colorOnSurface)
+        )
+        searchText.setHintTextColor(
+            MaterialColors.getColor(searchText, com.google.android.material.R.attr.colorOnSurfaceVariant)
+        )
         searchText.textSize = 15f
 
         binding.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
@@ -192,7 +196,12 @@ class HomeFragment : Fragment() {
                 }
                 is NetworkResult.Error -> {
                     Log.e("HomeFragment_DEBUG", "Error: ${result.error}")
-                    showErrorToast(getString(R.string.error_loading, NetworkErrorHandler.getErrorMessage(requireContext(), result.error)))
+                    showErrorToast(
+                        getString(
+                            R.string.error_loading,
+                            NetworkErrorHandler.getErrorMessage(requireContext(), result.error)
+                        )
+                    )
                 }
             }
 
