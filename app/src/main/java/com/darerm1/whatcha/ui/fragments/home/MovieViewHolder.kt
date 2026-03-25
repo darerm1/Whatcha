@@ -30,52 +30,44 @@ class MovieViewHolder(
         }
     }
 
-      fun bind(movie: MediaItem) {
-          currentMovie = movie
-          currentMovieId = movie.id
+    fun bind(movie: MediaItem) {
+        currentMovie = movie
+        currentMovieId = movie.id
 
-          binding.tvTitle.text = movie.name
-          binding.tvYearGenre.text = "${movie.year}, ${formatGenre(movie.genre.name)}"
-          
-          binding.tvKpRating.text = if (movie.kpRating != null) {
-              "Кинопоиск: ${String.format("%.1f", movie.kpRating)}"
-          } else {
-              ""
-          }
+        binding.tvTitle.text = movie.name
+        binding.tvYearGenre.text = "${movie.year}, ${formatGenre(movie.genre.name)}"
 
-          // Cancel previous image loading request
-          binding.ivPoster.dispose()
-          
-          val posterUrl = movie.posterUrl
-          if (posterUrl.isNullOrBlank()) {
-              binding.ivPoster.setImageResource(R.drawable.placeholder_poster)
-              binding.tvPlaceholder.visibility = android.view.View.GONE
-          } else {
-              binding.tvPlaceholder.visibility = android.view.View.GONE
-              
-              binding.ivPoster.load(posterUrl) {
-                  crossfade(true)
-                  placeholder(R.drawable.placeholder_poster)
-                  error(R.drawable.placeholder_poster)
-                  listener(
-                      onSuccess = { _, _ ->
-                          // Check if ViewHolder is still showing this movie
-                          if (currentMovieId == movie.id) {
-                              android.util.Log.d("MovieViewHolder", "Poster loaded: ${movie.name}")
-                              binding.tvPlaceholder.visibility = android.view.View.GONE
-                          }
-                      },
-                      onError = { _, error ->
-                          if (currentMovieId == movie.id) {
-                              android.util.Log.e("MovieViewHolder", "Failed to load poster for ${movie.name}: ${error.throwable?.message}")
-                          }
-                      }
-                  )
-              }
-          }
+        binding.ivPoster.dispose()
 
-          updateFavoriteIcon(movie.id)
-      }
+        val posterUrl = movie.posterUrl
+        if (posterUrl.isNullOrBlank()) {
+            binding.ivPoster.setImageResource(R.drawable.poster_placeholder_branded)
+            binding.tvPlaceholder.visibility = View.GONE
+        } else {
+            binding.tvPlaceholder.visibility = View.GONE
+
+            binding.ivPoster.load(posterUrl) {
+                crossfade(true)
+                placeholder(R.drawable.poster_placeholder_branded)
+                error(R.drawable.poster_placeholder_branded)
+                listener(
+                    onSuccess = { _, _ ->
+                        if (currentMovieId == movie.id) {
+                            android.util.Log.d("MovieViewHolder", "Poster loaded: ${movie.name}")
+                            binding.tvPlaceholder.visibility = View.GONE
+                        }
+                    },
+                    onError = { _, error ->
+                        if (currentMovieId == movie.id) {
+                            android.util.Log.e("MovieViewHolder", "Failed to load poster for ${movie.name}: ${error.throwable?.message}")
+                        }
+                    }
+                )
+            }
+        }
+
+        updateFavoriteIcon(movie.id)
+    }
 
     private fun updateFavoriteIcon(movieId: Long) {
         val isFav = isFavorite(movieId)

@@ -1,7 +1,7 @@
-package com.darerm1.whatcha.infrastructure
+﻿package com.darerm1.whatcha.infrastructure
 
-import com.darerm1.whatcha.data.interfaces.MediaItem
 import com.darerm1.whatcha.data.enums.Status
+import com.darerm1.whatcha.data.interfaces.MediaItem
 import com.darerm1.whatcha.data.interfaces.MovieListRepository
 import com.darerm1.whatcha.repositories.MovieListRepositoryImpl
 import com.darerm1.whatcha.utils.Result
@@ -34,11 +34,11 @@ class MovieListService(private val movieListRepo: MovieListRepository) {
         return movieListRepo.changeStatus(id, Status.COMPLETED)
     }
 
-    fun markAsPlanned(id: Long) { 
+    fun markAsPlanned(id: Long) {
         return movieListRepo.changeStatus(id, Status.PLANNED)
     }
 
-    fun markAsAbandoned(id: Long) { 
+    fun markAsAbandoned(id: Long) {
         return movieListRepo.changeStatus(id, Status.ABANDONED)
     }
 
@@ -46,28 +46,28 @@ class MovieListService(private val movieListRepo: MovieListRepository) {
         return movieListRepo.changeStatus(id, Status.NOT_SET)
     }
 
-    fun searchMoviesByName(query: String): List<MediaItem> { 
+    fun searchMoviesByName(query: String): List<MediaItem> {
         return movieListRepo.searchMoviesByName(query)
     }
 
-    fun getMoviesByStatus(status: Status): List<MediaItem> { 
+    fun getMoviesByStatus(status: Status): List<MediaItem> {
         return movieListRepo.getMoviesByStatus(status)
     }
 
-    fun getMoviesSortedByYear(ascending: Boolean = true): List<MediaItem> { 
+    fun getMoviesSortedByYear(ascending: Boolean = true): List<MediaItem> {
         return movieListRepo.getMoviesSortedByYearOrRating(ascending, "year")
     }
 
-    fun getMoviesSortedByRating(ascending: Boolean = true): List<MediaItem> { 
+    fun getMoviesSortedByRating(ascending: Boolean = true): List<MediaItem> {
         return movieListRepo.getMoviesSortedByYearOrRating(ascending, "rating")
     }
 
-    fun getStatistics(): String { 
+    fun getStatistics(): String {
         return movieListRepo.getStatistics()
     }
 
-    fun updateRating(id: Long, newRating: Int): Result<Unit> {
-        if (newRating !in 1..10) return Result.Error("Rating must be between 1 and  10")
+    fun updateRating(id: Long, newRating: Float): Result<Unit> {
+        if (newRating <= 0f || newRating > 10f) return Result.Error("Rating must be between 0.1 and 10")
         if (movieListRepo.findMovieById(id) == null) return Result.Error("Movie not found")
         return if (movieListRepo.updateRating(id, newRating)) Result.Success(Unit) else Result.Error("Failed to update rating")
     }

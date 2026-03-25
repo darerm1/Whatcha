@@ -1,4 +1,4 @@
-package com.darerm1.whatcha.data.interfaces
+﻿package com.darerm1.whatcha.data.interfaces
 
 import com.darerm1.whatcha.data.enums.Status
 import java.time.LocalDate
@@ -18,7 +18,7 @@ interface MovieListRepository {
 
     fun getMoviesSortedByYearOrRating(ascending: Boolean = true, comparator: String = "rating"): List<MediaItem>
 
-    fun updateRating(id: Long, newRating: Int): Boolean
+    fun updateRating(id: Long, newRating: Float): Boolean
 
     fun getMovies(): List<MediaItem>
 

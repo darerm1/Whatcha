@@ -1,11 +1,11 @@
-package com.darerm1.whatcha.repositories
+﻿package com.darerm1.whatcha.repositories
 
 import com.darerm1.whatcha.data.enums.Genre
 import com.darerm1.whatcha.data.enums.Status
 import com.darerm1.whatcha.data.models.Movie
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
-import org.junit.Assert.*
 
 class MovieListRepositoryTest {
     private lateinit var repository: MovieListRepositoryImpl
@@ -20,8 +20,9 @@ class MovieListRepositoryTest {
         val initialCount = repository.getMovies().size
         val movie = Movie(
             id = 1, name = "...", year = 2014, genre = Genre.FANTASY,
-            duration = 169, personalRating = 9, kpRating = 8.5, status = Status.COMPLETED,
-            description = "...")
+            duration = 169, personalRating = 9f, kpRating = 8.5, status = Status.COMPLETED,
+            description = "..."
+        )
 
         repository.addMovie(movie)
 
@@ -32,8 +33,9 @@ class MovieListRepositoryTest {
     fun `removeMovieById should decrease movie count`() {
         val movie = Movie(
             id = 1, name = "...", year = 2014, genre = Genre.FANTASY,
-            duration = 169, personalRating = 9, kpRating = 8.5, status = Status.COMPLETED,
-            description = "...")
+            duration = 169, personalRating = 9f, kpRating = 8.5, status = Status.COMPLETED,
+            description = "..."
+        )
         repository.addMovie(movie)
         val initialCount = repository.getMovies().size
 
@@ -46,26 +48,29 @@ class MovieListRepositoryTest {
     fun `updateRating should change movie rating`() {
         val movie = Movie(
             id = 1, name = "...", year = 2014, genre = Genre.FANTASY,
-            duration = 169, personalRating = 9, kpRating = 8.5, status = Status.COMPLETED,
-            description = "...")
+            duration = 169, personalRating = 9f, kpRating = 8.5, status = Status.COMPLETED,
+            description = "..."
+        )
         repository.addMovie(movie)
 
-        repository.updateRating(1, 9)
+        repository.updateRating(1, 9.3f)
 
         val updatedMovie = repository.findMovieById(1)
-        assertEquals(9, updatedMovie?.personalRating)
+        assertEquals(9.3f, updatedMovie?.personalRating ?: 0f, 0.001f)
     }
 
     @Test
     fun `getMoviesSortedByYear should return sorted list`() {
         val movie1 = Movie(
             id = 1, name = "Old", year = 2000, genre = Genre.FANTASY,
-            duration = 169, personalRating = 9, kpRating = 8.5, status = Status.COMPLETED,
-            description = "...")
+            duration = 169, personalRating = 9f, kpRating = 8.5, status = Status.COMPLETED,
+            description = "..."
+        )
         val movie2 = Movie(
             id = 2, name = "New", year = 2020, genre = Genre.FANTASY,
-            duration = 169, personalRating = 9, kpRating = 8.5, status = Status.COMPLETED,
-            description = "...")
+            duration = 169, personalRating = 9f, kpRating = 8.5, status = Status.COMPLETED,
+            description = "..."
+        )
         repository.addMovie(movie2)
         repository.addMovie(movie1)
 
