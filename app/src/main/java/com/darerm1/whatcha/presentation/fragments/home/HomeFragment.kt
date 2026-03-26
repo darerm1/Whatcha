@@ -1,5 +1,6 @@
 package com.darerm1.whatcha.presentation.fragments.home
 
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -18,6 +19,7 @@ import com.darerm1.whatcha.domain.entities.MediaItem
 import com.darerm1.whatcha.databinding.FragmentHomeBinding
 import com.darerm1.whatcha.domain.common.SearchConfig
 import com.darerm1.whatcha.domain.common.DomainError
+import com.darerm1.whatcha.domain.usecases.ManageMovieListUseCase
 import com.darerm1.whatcha.presentation.NavigationListener
 import com.darerm1.whatcha.presentation.activities.MainActivity
 import com.darerm1.whatcha.presentation.utils.ErrorHandler
@@ -35,7 +37,7 @@ class HomeFragment : Fragment() {
 
     private val repository by lazy { WhatchaApplication.instance.repository }
 
-    private val manageMovieListUseCase = (requireActivity() as MainActivity).useCase
+    private lateinit var manageMovieListUseCase: ManageMovieListUseCase
 
     private val adapter by lazy {
         MovieAdapter(
@@ -51,6 +53,11 @@ class HomeFragment : Fragment() {
     private var favoriteIds: Set<Long> = emptySet()
     private var isInitialLoadDone = false
     private var isSearchMode = false
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        manageMovieListUseCase = (requireActivity() as MainActivity).useCase
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,

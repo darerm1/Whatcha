@@ -1,6 +1,7 @@
 package com.darerm1.whatcha.presentation.fragments.details
 
 import android.app.Dialog
+import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
@@ -29,6 +30,7 @@ import com.darerm1.whatcha.databinding.FragmentDetailBinding
 import com.darerm1.whatcha.presentation.utils.ErrorHandler
 import com.darerm1.whatcha.presentation.utils.RatingFormatter
 import com.darerm1.whatcha.domain.common.Result
+import com.darerm1.whatcha.domain.usecases.ManageMovieListUseCase
 import com.darerm1.whatcha.presentation.activities.MainActivity
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.launch
@@ -40,10 +42,15 @@ class DetailFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val repository by lazy { WhatchaApplication.instance.repository }
-    private val manageMovieListUseCase = (requireActivity() as MainActivity).useCase
+    private lateinit var manageMovieListUseCase: ManageMovieListUseCase
 
     private var movieId: Long = -1L
     private var currentPosterUrl: String? = null
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        manageMovieListUseCase = (requireActivity() as MainActivity).useCase
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,

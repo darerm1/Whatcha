@@ -1,5 +1,6 @@
 package com.darerm1.whatcha.presentation.fragments.favorites
 
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -16,11 +17,12 @@ import com.darerm1.whatcha.domain.entities.MediaItem
 import com.darerm1.whatcha.domain.entities.Movie
 import com.darerm1.whatcha.presentation.NavigationListener
 import com.darerm1.whatcha.domain.common.Result
+import com.darerm1.whatcha.domain.usecases.ManageMovieListUseCase
 import com.darerm1.whatcha.presentation.activities.MainActivity
 import com.darerm1.whatcha.presentation.utils.ErrorHandler
 
 class FavoritesFragment : Fragment() {
-    private val manageMovieListUseCase = (requireActivity() as MainActivity).useCase
+    private lateinit var manageMovieListUseCase: ManageMovieListUseCase
 
     private lateinit var recyclerView: RecyclerView
 
@@ -37,6 +39,11 @@ class FavoritesFragment : Fragment() {
     private var currentSort: String = "default"
 
     private var currentSortAscending: Boolean = true
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        manageMovieListUseCase = (requireActivity() as MainActivity).useCase
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_favorites, container, false)
