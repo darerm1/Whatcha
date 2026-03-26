@@ -1,4 +1,4 @@
-package com.darerm1.whatcha.presentation.fragments.home
+package com.darerm1.whatcha.presentation.fragments.home.adapter
 
 import com.darerm1.whatcha.domain.entities.MediaItem
 

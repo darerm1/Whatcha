@@ -1,4 +1,4 @@
-﻿package com.darerm1.whatcha.presentation.fragments.favorites
+package com.darerm1.whatcha.presentation.fragments.favorites.adapter
 
 import android.view.LayoutInflater
 import android.view.View
@@ -6,8 +6,8 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.darerm1.whatcha.R
-import com.darerm1.whatcha.domain.entities.enums.Status
 import com.darerm1.whatcha.domain.entities.MediaItem
+import com.darerm1.whatcha.domain.entities.enums.Status
 import com.darerm1.whatcha.presentation.utils.RatingFormatter
 
 class FavoritesAdapter(

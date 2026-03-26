@@ -1,7 +1,6 @@
 package com.darerm1.whatcha.presentation.fragments.details
 
 import android.app.Dialog
-import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
@@ -19,19 +18,20 @@ import androidx.appcompat.widget.AppCompatImageView
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import coil.load
 import com.darerm1.whatcha.R
 import com.darerm1.whatcha.WhatchaApplication
 import com.darerm1.whatcha.domain.entities.enums.Status
-import com.darerm1.whatcha.domain.entities.Movie
-import com.darerm1.whatcha.domain.entities.MovieRatings
 import com.darerm1.whatcha.databinding.FragmentDetailBinding
+import com.darerm1.whatcha.presentation.activities.MainActivity
+import com.darerm1.whatcha.presentation.fragments.details.viewmodel.DetailIntent
+import com.darerm1.whatcha.presentation.fragments.details.viewmodel.DetailState
+import com.darerm1.whatcha.presentation.fragments.details.viewmodel.DetailViewModel
+import com.darerm1.whatcha.presentation.fragments.details.viewmodel.DetailViewModelFactory
 import com.darerm1.whatcha.presentation.utils.ErrorHandler
 import com.darerm1.whatcha.presentation.utils.RatingFormatter
-import com.darerm1.whatcha.domain.common.Result
-import com.darerm1.whatcha.domain.usecases.ManageMovieListUseCase
-import com.darerm1.whatcha.presentation.activities.MainActivity
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -41,16 +41,10 @@ class DetailFragment : Fragment() {
     private var _binding: FragmentDetailBinding? = null
     private val binding get() = _binding!!
 
-    private val repository by lazy { WhatchaApplication.instance.repository }
-    private lateinit var manageMovieListUseCase: ManageMovieListUseCase
+    private lateinit var viewModel: DetailViewModel
 
     private var movieId: Long = -1L
     private var currentPosterUrl: String? = null
-
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-        manageMovieListUseCase = (requireActivity() as MainActivity).useCase
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -66,6 +60,11 @@ class DetailFragment : Fragment() {
 
         movieId = arguments?.getLong(ARG_MOVIE_ID, -1L) ?: -1L
 
+        val repository = WhatchaApplication.instance.repository
+        val useCase = (requireActivity() as MainActivity).useCase
+        viewModel = ViewModelProvider(this, DetailViewModelFactory(repository, useCase))
+            .get(DetailViewModel::class.java)
+
         binding.toolbar.setNavigationOnClickListener {
             requireActivity().onBackPressedDispatcher.onBackPressed()
         }
@@ -73,78 +72,59 @@ class DetailFragment : Fragment() {
 
         binding.ratingStars.onRatingChange = { rating ->
             updateRatingValue(rating)
-            binding.saveRatingButton.isEnabled = isInFavorites() && rating > 0f
         }
 
-        binding.favoriteButton.setOnClickListener { toggleFavorite() }
-        binding.saveRatingButton.setOnClickListener { updateRating(binding.ratingStars.rating) }
+        binding.favoriteButton.setOnClickListener {
+            viewModel.processIntent(DetailIntent.ToggleFavorite)
+        }
+        binding.saveRatingButton.setOnClickListener {
+            viewModel.processIntent(DetailIntent.UpdateRating(binding.ratingStars.rating))
+        }
         binding.statusButton.setOnClickListener { showStatusMenu() }
-        binding.retryButton.setOnClickListener { loadMovie() }
+        binding.retryButton.setOnClickListener {
+            viewModel.processIntent(DetailIntent.Load(movieId))
+        }
         binding.posterImage.setOnClickListener { showPosterPreview() }
 
-        loadMovie()
-    }
-
-    private fun showPosterPreview() {
-        val context = requireContext()
-        val dialog = Dialog(context, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
-        val overlay = FrameLayout(context).apply {
-            setBackgroundColor(0x88000000.toInt())
-            setOnClickListener { dialog.dismiss() }
-        }
-        val padding = 24.dp
-        val imageView = AppCompatImageView(context).apply {
-            layoutParams = FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                Gravity.CENTER
-            )
-            adjustViewBounds = true
-            scaleType = ImageView.ScaleType.FIT_CENTER
-            setPadding(padding, padding, padding, padding)
-            setOnClickListener { dialog.dismiss() }
-        }
-
-        val posterUrl = currentPosterUrl
-        if (posterUrl.isNullOrBlank()) {
-            imageView.setImageResource(R.drawable.poster_placeholder_branded)
-        } else {
-            imageView.load(posterUrl) {
-                placeholder(R.drawable.poster_placeholder_branded)
-                error(R.drawable.poster_placeholder_branded)
-            }
-        }
-
-        overlay.addView(imageView)
-        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-        dialog.window?.setDimAmount(0f)
-        dialog.setContentView(overlay)
-        dialog.show()
-    }
-
-    private fun loadMovie() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            when (val result = repository.getMovieById(movieId)) {
-                is Result.Success -> {
-                    val movie = result.data as? Movie ?: return@launch
-                    displayMovie(movie)
-                    showError(false)
-                }
-                is Result.Error -> {
-                    showError(true, ErrorHandler.getErrorMessage(requireContext(), result.error))
+        lifecycleScope.launch {
+            viewModel.state.collect { state ->
+                when (state) {
+                    is DetailState.Loading -> showLoading()
+                    is DetailState.Content -> showContent(state)
+                    is DetailState.Error -> showError(state.error)
                 }
             }
         }
-    }
 
-    private fun showError(show: Boolean, message: String = "") {
-        binding.errorLayout.isVisible = show
-        if (show && message.isNotEmpty()) {
-            binding.errorText.text = message
+        lifecycleScope.launch {
+            viewModel.event.collect { event ->
+                when (event) {
+                    is DetailEvent.ShowSnackbar -> showSnackbar(
+                        ErrorHandler.getErrorMessage(requireContext(), event.error)
+                    )
+                    DetailEvent.RatingSaved -> showSnackbar(R.string.detail_rating_saved)
+                    DetailEvent.StatusUpdated -> showSnackbar(R.string.status_updated)
+                    is DetailEvent.FavoriteToggled -> showSnackbar(
+                        if (event.added) R.string.detail_added_to_favorites
+                        else R.string.detail_removed_from_favorites
+                    )
+                }
+            }
         }
+
+        viewModel.processIntent(DetailIntent.Load(movieId))
     }
 
-    private fun displayMovie(movie: Movie) {
+    private fun showLoading() {
+        binding.errorLayout.isVisible = false
+    }
+
+    private fun showContent(state: DetailState.Content) {
+        binding.errorLayout.isVisible = false
+
+        val movie = state.movie
+        currentPosterUrl = movie.posterUrl
+
         binding.toolbar.title = movie.name
         binding.titleText.text = movie.name
         binding.descriptionText.text = movie.description
@@ -158,30 +138,27 @@ class DetailFragment : Fragment() {
         bindRatingsChart(movie.ratings)
         loadPoster(movie.posterUrl)
 
-        val isFavorite = manageMovieListUseCase.getMovies().any { it.id == movie.id }
-        updateFavoriteButton(isFavorite)
-        updateRatingState(movie.personalRating, isFavorite)
-        updateStatusButtonText(movie.status)
+        updateFavoriteButton(state.isFavorite)
+        updateRatingState(state.personalRating, state.isFavorite)
+        updateStatusButtonText(state.status)
     }
 
-    private fun bindRatingsChart(ratings: MovieRatings?) {
+    private fun showError(error: com.darerm1.whatcha.domain.common.DomainError) {
+        binding.errorLayout.isVisible = true
+        binding.errorText.text = ErrorHandler.getErrorMessage(requireContext(), error)
+    }
+
+    private fun bindRatingsChart(ratings: com.darerm1.whatcha.domain.entities.MovieRatings?) {
         val hasRatings = ratings?.let {
             listOf(
-                it.kp,
-                it.imdb,
-                it.tmdb,
-                it.filmCritics,
-                it.russianFilmCritics,
-                it.await
+                it.kp, it.imdb, it.tmdb, it.filmCritics, it.russianFilmCritics, it.await
             ).any { value -> value != null }
         } == true
-
         binding.ratingsSection.isVisible = hasRatings
         binding.ratingsChart.ratings = ratings
     }
 
     private fun loadPoster(posterUrl: String?) {
-        currentPosterUrl = posterUrl
         if (posterUrl.isNullOrBlank()) {
             binding.posterImage.setImageResource(R.drawable.poster_placeholder_branded)
         } else {
@@ -193,10 +170,7 @@ class DetailFragment : Fragment() {
                         Log.d("DetailFragment", "Poster loaded successfully for movie: $movieId")
                     },
                     onError = { _, error ->
-                        Log.e(
-                            "DetailFragment",
-                            "Failed to load poster for movie $movieId: ${error.throwable?.message}"
-                        )
+                        Log.e("DetailFragment", "Failed to load poster for movie $movieId: ${error.throwable?.message}")
                     }
                 )
             }
@@ -208,13 +182,11 @@ class DetailFragment : Fragment() {
             if (isFavorite) R.drawable.ic_favorite_filled
             else R.drawable.ic_favorite_border
         )
-
         val tintAttr = if (isFavorite) {
             com.google.android.material.R.attr.colorError
         } else {
             com.google.android.material.R.attr.colorOnSurface
         }
-
         binding.favoriteButton.imageTintList = ColorStateList.valueOf(resolveThemeColor(tintAttr))
     }
 
@@ -254,80 +226,11 @@ class DetailFragment : Fragment() {
                     R.id.status_not_set -> Status.NOT_SET
                     else -> return@setOnMenuItemClickListener false
                 }
-                updateStatus(status)
+                viewModel.processIntent(DetailIntent.UpdateStatus(status))
                 true
             }
             show()
         }
-    }
-
-    private fun updateStatus(newStatus: Status) {
-        if (!isInFavorites()) {
-            showSnackbar(R.string.detail_add_to_favorites_first)
-            return
-        }
-
-        when (newStatus) {
-            Status.PLANNED -> manageMovieListUseCase.markAsPlanned(movieId)
-            Status.COMPLETED -> manageMovieListUseCase.markAsCompleted(movieId)
-            Status.ABANDONED -> manageMovieListUseCase.markAsAbandoned(movieId)
-            Status.NOT_SET -> manageMovieListUseCase.markAsNotSet(movieId)
-        }
-
-        showSnackbar(R.string.status_updated)
-        loadMovie()
-    }
-
-    private fun updateRating(value: Float) {
-        if (!isInFavorites()) {
-            showSnackbar(R.string.detail_add_to_favorites_first)
-            return
-        }
-
-        val result = manageMovieListUseCase.updateRating(movieId, value)
-
-        val message = when (result) {
-            is Result.Success -> getString(R.string.detail_rating_saved)
-            is Result.Error -> ErrorHandler.getErrorMessage(requireContext(), result.error)
-        }
-
-        showSnackbar(message)
-        loadMovie()
-    }
-
-    private fun toggleFavorite() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            when (val result = repository.getMovieById(movieId)) {
-                is Result.Success -> {
-                    val movie = result.data as? Movie ?: return@launch
-                    val isFav = isInFavorites()
-
-                    val favResult = if (isFav) {
-                        manageMovieListUseCase.removeMovieById(movie.id)
-                    } else {
-                        manageMovieListUseCase.addMovie(movie)
-                    }
-
-                    val message = when (favResult) {
-                        is Result.Success -> getString(
-                            if (isFav) R.string.detail_removed_from_favorites
-                            else R.string.detail_added_to_favorites
-                        )
-                        is Result.Error -> ErrorHandler.getErrorMessage(requireContext(), favResult.error)
-                    }
-
-                    showSnackbar(message)
-                    loadMovie()
-                }
-                is Result.Error -> {
-                    showSnackbar(ErrorHandler.getErrorMessage(requireContext(), result.error))
-                }
-            }
-        }
-    }
-
-    private fun isInFavorites(): Boolean {
-        return manageMovieListUseCase.getMovies().any { it.id == movieId }
     }
 
     private fun showSnackbar(messageResId: Int) {
@@ -346,6 +249,43 @@ class DetailFragment : Fragment() {
 
     private val Int.dp: Int
         get() = (this * resources.displayMetrics.density).roundToInt()
+
+    private fun showPosterPreview() {
+        val context = requireContext()
+        val dialog = Dialog(context, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+        val overlay = FrameLayout(context).apply {
+            setBackgroundColor(0x88000000.toInt())
+            setOnClickListener { dialog.dismiss() }
+        }
+        val padding = 24.dp
+        val imageView = AppCompatImageView(context).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                Gravity.CENTER
+            )
+            adjustViewBounds = true
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            setPadding(padding, padding, padding, padding)
+            setOnClickListener { dialog.dismiss() }
+        }
+
+        val posterUrl = currentPosterUrl
+        if (posterUrl.isNullOrBlank()) {
+            imageView.setImageResource(R.drawable.poster_placeholder_branded)
+        } else {
+            imageView.load(posterUrl) {
+                placeholder(R.drawable.poster_placeholder_branded)
+                error(R.drawable.poster_placeholder_branded)
+            }
+        }
+
+        overlay.addView(imageView)
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        dialog.window?.setDimAmount(0f)
+        dialog.setContentView(overlay)
+        dialog.show()
+    }
 
     override fun onDestroyView() {
         super.onDestroyView()

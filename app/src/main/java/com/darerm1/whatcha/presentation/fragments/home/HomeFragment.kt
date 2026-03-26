@@ -1,69 +1,49 @@
 package com.darerm1.whatcha.presentation.fragments.home
 
-import android.content.Context
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.AutoCompleteTextView
-import android.widget.Toast
+import androidx.lifecycle.ViewModelProvider
 import androidx.appcompat.widget.SearchView
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import com.darerm1.whatcha.WhatchaApplication
-import com.darerm1.whatcha.domain.common.Result
 import com.darerm1.whatcha.domain.entities.MediaItem
 import com.darerm1.whatcha.databinding.FragmentHomeBinding
-import com.darerm1.whatcha.domain.common.SearchConfig
 import com.darerm1.whatcha.domain.common.DomainError
-import com.darerm1.whatcha.domain.usecases.ManageMovieListUseCase
 import com.darerm1.whatcha.presentation.NavigationListener
 import com.darerm1.whatcha.presentation.activities.MainActivity
+import com.darerm1.whatcha.presentation.fragments.home.adapter.ListItem
+import com.darerm1.whatcha.presentation.fragments.home.adapter.MovieAdapter
+import com.darerm1.whatcha.presentation.fragments.home.viewmodel.HomeIntent
+import com.darerm1.whatcha.presentation.fragments.home.viewmodel.HomeState
+import com.darerm1.whatcha.presentation.fragments.home.viewmodel.HomeViewModel
+import com.darerm1.whatcha.presentation.fragments.home.viewmodel.HomeViewModelFactory
 import com.darerm1.whatcha.presentation.utils.ErrorHandler
-import com.google.android.material.color.MaterialColors
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class HomeFragment : Fragment() {
 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
 
-    private val repository by lazy { WhatchaApplication.instance.repository }
-
-    private lateinit var manageMovieListUseCase: ManageMovieListUseCase
+    private lateinit var viewModel: HomeViewModel
 
     private val adapter by lazy {
         MovieAdapter(
-            onFavoriteClick = { movie -> toggleFavorite(movie) },
+            onFavoriteClick = { movie -> viewModel.processIntent(HomeIntent.ToggleFavorite(movie)) },
             onItemClick = { movie -> (activity as? NavigationListener)?.openDetails(movie.id) },
-            isFavorite = { movieId -> isFavorite(movieId) },
-            onLoadMoreClick = { loadMoreMovies() }
+            isFavorite = { movieId -> viewModel.getFavoriteIds().contains(movieId) },
+            onLoadMoreClick = {
+                viewModel.processIntent(HomeIntent.LoadMore)
+            }
         )
     }
 
-    private val allMovies = mutableListOf<MediaItem>()
-    private var searchJob: Job? = null
-    private var favoriteIds: Set<Long> = emptySet()
-    private var isInitialLoadDone = false
-    private var isSearchMode = false
-
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-        manageMovieListUseCase = (requireActivity() as MainActivity).useCase
-    }
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -71,11 +51,55 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        refreshFavoriteIds()
+        val repository = WhatchaApplication.instance.repository
+        val useCase = (requireActivity() as MainActivity).useCase
+        viewModel = ViewModelProvider(
+            this,
+            HomeViewModelFactory(repository, useCase)
+        )[HomeViewModel::class.java]
+
         setupRecyclerView()
         setupSearchView()
         setupRetryButton()
-        loadMovies()
+
+        lifecycleScope.launch {
+            viewModel.state.collect { state ->
+                when (state) {
+                    is HomeState.Loading -> showLoading()
+                    is HomeState.Content -> showContent(state.movies, state.hasMore, state.isSearchMode)
+                    is HomeState.Error -> showError(state.error)
+                }
+            }
+        }
+    }
+
+    private fun showLoading() {
+        binding.progressBar.isVisible = true
+        binding.recyclerView.isVisible = false
+        binding.errorLayout.isVisible = false
+        binding.tvEmpty.isVisible = false
+    }
+
+    private fun showContent(movies: List<MediaItem>, hasMore: Boolean, isSearchMode: Boolean) {
+        binding.progressBar.isVisible = false
+        binding.errorLayout.isVisible = false
+        binding.recyclerView.isVisible = true
+        binding.tvEmpty.isVisible = movies.isEmpty()
+
+        val items = movies.map { ListItem.MovieItem(it) }
+        if (!isSearchMode && hasMore) {
+            adapter.submitList(items + ListItem.LoadMoreItem)
+        } else {
+            adapter.submitList(items)
+        }
+    }
+
+    private fun showError(error: DomainError) {
+        binding.progressBar.isVisible = false
+        binding.recyclerView.isVisible = false
+        binding.tvEmpty.isVisible = false
+        binding.errorLayout.isVisible = true
+        binding.errorText.text = ErrorHandler.getErrorMessage(requireContext(), error)
     }
 
     private fun setupRecyclerView() {
@@ -93,184 +117,23 @@ class HomeFragment : Fragment() {
     }
 
     private fun setupSearchView() {
-        val searchText = binding.searchView.findViewById<AutoCompleteTextView>(androidx.appcompat.R.id.search_src_text)
-        searchText.setTextColor(
-            MaterialColors.getColor(searchText, com.google.android.material.R.attr.colorOnSurface)
-        )
-        searchText.setHintTextColor(
-            MaterialColors.getColor(searchText, com.google.android.material.R.attr.colorOnSurfaceVariant)
-        )
-        searchText.textSize = 15f
-
         binding.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?): Boolean = true
-
+            override fun onQueryTextSubmit(query: String?) = true
             override fun onQueryTextChange(newText: String?): Boolean {
-                searchMovies(newText.orEmpty())
+                viewModel.processIntent(HomeIntent.Search(newText.orEmpty()))
                 return true
             }
         })
     }
 
     private fun setupRetryButton() {
-        binding.retryButton.setOnClickListener { loadMovies() }
-    }
-
-    private fun loadMovies() {
-        if (isInitialLoadDone && allMovies.isNotEmpty()) {
-            return
+        binding.retryButton.setOnClickListener {
+            viewModel.processIntent(HomeIntent.Load)
         }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            setLoadingState(true)
-
-            val result = withContext(Dispatchers.IO) {
-                repository.searchMovies("", SearchConfig.DEFAULT_PAGE_SIZE)
-            }
-
-            when (val result = repository.searchMovies("", SearchConfig.DEFAULT_PAGE_SIZE)) {
-                is Result.Success -> {
-                    setLoadingState(false)
-                    isInitialLoadDone = true
-                    if (result.data.isEmpty()) {
-                        showEmptyState()
-                    } else {
-                        allMovies.clear()
-                        allMovies.addAll(result.data)
-                        updateDisplayList()
-                    }
-                }
-                is Result.Error -> {
-                    setLoadingState(false)
-                    showErrorState(result.error)
-                }
-            }
-        }
-    }
-
-    private fun searchMovies(query: String) {
-        searchJob?.cancel()
-        searchJob = viewLifecycleOwner.lifecycleScope.launch {
-            delay(DEBOUNCE_DELAY)
-
-            isSearchMode = query.isNotEmpty()
-
-            if (isSearchMode) {
-                val searchQuery = query.lowercase().trim()
-                val filteredMovies = allMovies.filter { movie ->
-                    movie.name.lowercase().contains(searchQuery)
-                }
-
-                val listItems = filteredMovies.map { ListItem.MovieItem(it) }
-                adapter.submitList(listItems)
-
-                if (filteredMovies.isEmpty()) {
-                    showEmptyState()
-                } else {
-                    binding.tvEmpty.isVisible = false
-                    binding.recyclerView.isVisible = true
-                }
-            } else {
-                updateDisplayList()
-            }
-        }
-    }
-
-    private fun loadMoreMovies() {
-        Log.d("HomeFragment_DEBUG", "LoadMoreMovies start")
-        Log.d("HomeFragment_DEBUG", "allMovies size before: ${allMovies.size}")
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            val result = withContext(Dispatchers.IO) {
-                repository.loadMore()
-            }
-
-            Log.d("HomeFragment_DEBUG", "result type: ${result::class.simpleName}")
-
-            when (val result = repository.loadMore()) {
-                is Result.Success -> {
-                    val newMovies = result.data.filter { newMovie ->
-                        allMovies.none { it.id == newMovie.id }
-                    }
-                    allMovies.addAll(newMovies)
-                    updateDisplayList()
-                }
-                is Result.Error -> {
-                    showErrorToast(ErrorHandler.getErrorMessage(requireContext(), result.error))
-                }
-            }
-
-            Log.d("HomeFragment_DEBUG", "LoadMoreMovies end")
-        }
-    }
-
-    private fun updateDisplayList() {
-        val listItems = mutableListOf<ListItem>()
-        listItems.addAll(allMovies.map { ListItem.MovieItem(it) })
-
-        if (!isSearchMode && repository.hasMoreData()) {
-            listItems.add(ListItem.LoadMoreItem)
-        }
-
-        adapter.submitList(listItems)
-    }
-
-    private fun toggleFavorite(movie: MediaItem) {
-        if (isFavorite(movie.id)) {
-            manageMovieListUseCase.removeMovieById(movie.id)
-        } else {
-            manageMovieListUseCase.addMovie(movie)
-        }
-        refreshFavoriteIds()
-        val position = adapter.currentList.indexOfFirst {
-            it is ListItem.MovieItem && it.movie.id == movie.id
-        }
-        if (position >= 0) {
-            adapter.notifyItemChanged(position)
-        }
-    }
-
-    private fun refreshFavoriteIds() {
-        favoriteIds = manageMovieListUseCase.getMovies().map { it.id }.toSet()
-    }
-
-    private fun isFavorite(movieId: Long): Boolean {
-        return favoriteIds.contains(movieId)
-    }
-
-    private fun setLoadingState(isLoading: Boolean) {
-        binding.progressBar.isVisible = isLoading
-        binding.recyclerView.isVisible = !isLoading
-        binding.errorLayout.isVisible = false
-        binding.tvEmpty.isVisible = false
-    }
-
-    private fun showEmptyState() {
-        binding.tvEmpty.isVisible = true
-        binding.recyclerView.isVisible = false
-        binding.progressBar.isVisible = false
-        binding.errorLayout.isVisible = false
-    }
-
-    private fun showErrorState(error: DomainError) {
-        binding.errorText.text = ErrorHandler.getErrorMessage(requireContext(), error)
-        binding.errorLayout.isVisible = true
-        binding.recyclerView.isVisible = false
-        binding.progressBar.isVisible = false
-        binding.tvEmpty.isVisible = false
-    }
-
-    private fun showErrorToast(message: String) {
-        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        searchJob?.cancel()
         _binding = null
-    }
-
-    companion object {
-        private const val DEBOUNCE_DELAY = 300L
     }
 }

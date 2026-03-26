@@ -1,4 +1,4 @@
-package com.darerm1.whatcha.presentation.fragments.home
+package com.darerm1.whatcha.presentation.fragments.home.adapter
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -29,7 +29,7 @@ class MovieAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         return when (viewType) {
-            VIEW_TYPE_MOVIE -> MovieViewHolder.create(parent, onFavoriteClick, onItemClick, isFavorite)
+            VIEW_TYPE_MOVIE -> MovieViewHolder.Companion.create(parent, onFavoriteClick, onItemClick, isFavorite)
             VIEW_TYPE_LOAD_MORE -> LoadMoreViewHolder.create(parent, onLoadMoreClick)
             else -> throw IllegalArgumentException("Unknown view type: $viewType")
         }

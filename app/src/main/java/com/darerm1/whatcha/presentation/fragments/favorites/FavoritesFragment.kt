@@ -1,6 +1,5 @@
 package com.darerm1.whatcha.presentation.fragments.favorites
 
-import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -9,41 +8,32 @@ import android.widget.Button
 import android.widget.PopupMenu
 import android.widget.TextView
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.darerm1.whatcha.R
 import com.darerm1.whatcha.domain.entities.enums.Status
 import com.darerm1.whatcha.domain.entities.MediaItem
-import com.darerm1.whatcha.domain.entities.Movie
 import com.darerm1.whatcha.presentation.NavigationListener
-import com.darerm1.whatcha.domain.common.Result
-import com.darerm1.whatcha.domain.usecases.ManageMovieListUseCase
 import com.darerm1.whatcha.presentation.activities.MainActivity
-import com.darerm1.whatcha.presentation.utils.ErrorHandler
+import com.darerm1.whatcha.presentation.fragments.favorites.adapter.FavoritesAdapter
+import com.darerm1.whatcha.presentation.fragments.favorites.viewmodel.FavoritesIntent
+import com.darerm1.whatcha.presentation.fragments.favorites.viewmodel.FavoritesState
+import com.darerm1.whatcha.presentation.fragments.favorites.viewmodel.FavoritesViewModel
+import com.darerm1.whatcha.presentation.fragments.favorites.viewmodel.FavoritesViewModelFactory
+import kotlinx.coroutines.launch
 
 class FavoritesFragment : Fragment() {
-    private lateinit var manageMovieListUseCase: ManageMovieListUseCase
+
+    private lateinit var viewModel: FavoritesViewModel
 
     private lateinit var recyclerView: RecyclerView
-
-    private lateinit var adapter: FavoritesAdapter
-
     private lateinit var emptyTextView: TextView
-
     private lateinit var buttonSort: Button
-
     private lateinit var buttonFilter: Button
 
-    private var currentFilter: Status? = null
-
-    private var currentSort: String = "default"
-
-    private var currentSortAscending: Boolean = true
-
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-        manageMovieListUseCase = (requireActivity() as MainActivity).useCase
-    }
+    private lateinit var adapter: FavoritesAdapter
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_favorites, container, false)
@@ -51,14 +41,6 @@ class FavoritesFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        savedInstanceState?.let {
-            currentSort = it.getString("currentSort", "default")
-            currentSortAscending = it.getBoolean("currentSortAscending", true)
-            val filterName = it.getString("currentFilter")
-            currentFilter = filterName?.let { name ->
-                Status.entries.find { it.name == name }
-            }
-        }
 
         recyclerView = view.findViewById(R.id.favorites_recycler)
         emptyTextView = view.findViewById(R.id.empty_text_view)
@@ -67,31 +49,32 @@ class FavoritesFragment : Fragment() {
 
         setupRecyclerView()
         setupButtons()
-        updateSortButtonText()
-        updateFilterButtonText()
 
-        if (savedInstanceState != null) {
-            loadFilteredAndSorted()
-        } else {
-            loadFavorites()
+        val useCase = (requireActivity() as MainActivity).useCase
+        viewModel = ViewModelProvider(this, FavoritesViewModelFactory(useCase))
+            .get(FavoritesViewModel::class.java)
+
+        lifecycleScope.launch {
+            viewModel.state.collect { state ->
+                when (state) {
+                    is FavoritesState.Loading -> showLoading()
+                    is FavoritesState.Content -> showContent(
+                        movies = state.movies,
+                        sort = state.currentSort,
+                        sortAscending = state.currentSortAscending,
+                        filter = state.currentFilter
+                    )
+                    is FavoritesState.Error -> showError(state.error)
+                }
+            }
         }
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putString("currentSort", currentSort)
-        outState.putBoolean("currentSortAscending", currentSortAscending)
-        outState.putString("currentFilter", currentFilter?.name)
     }
 
     private fun setupRecyclerView() {
         adapter = FavoritesAdapter(
             movies = emptyList(),
-            onItemClick = { movie ->
-                openMovieDetails(movie.id)
-            }
+            onItemClick = { movie -> openMovieDetails(movie.id) }
         )
-
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = adapter
     }
@@ -101,50 +84,29 @@ class FavoritesFragment : Fragment() {
         buttonFilter.setOnClickListener { showFilterMenu() }
     }
 
-    private fun updateSortButtonText() {
-        val directionSymbol = if (currentSortAscending) "↑" else "↓"
-
-        buttonSort.text = when (currentSort) {
-            "rating" -> getString(R.string.sort_by_rating) + " $directionSymbol"
-            "year" -> getString(R.string.sort_by_year) + " $directionSymbol"
-            else -> getString(R.string.sort)
-        }
-    }
-
-    private fun updateFilterButtonText() {
-        buttonFilter.text = when (currentFilter) {
-            Status.COMPLETED -> getString(R.string.filter_completed)
-            Status.PLANNED -> getString(R.string.filter_planned)
-            Status.ABANDONED -> getString(R.string.filter_abandoned)
-            else -> getString(R.string.filter)
-        }
-    }
-
     private fun showSortMenu() {
         PopupMenu(requireContext(), buttonSort).apply {
             menuInflater.inflate(R.menu.menu_sort, menu)
             setOnMenuItemClickListener { item ->
                 when (item.itemId) {
                     R.id.sort_by_rating -> {
-                        if (currentSort == "rating") {
-                            currentSortAscending = !currentSortAscending
+                        val currentState = viewModel.state.value as? FavoritesState.Content
+                        val ascending = if (currentState?.currentSort == "rating") {
+                            !currentState.currentSortAscending
                         } else {
-                            currentSort = "rating"
-                            currentSortAscending = true
+                            true
                         }
-                        updateSortButtonText()
-                        loadFilteredAndSorted()
+                        viewModel.processIntent(FavoritesIntent.Sort("rating", ascending))
                         true
                     }
                     R.id.sort_by_year -> {
-                        if (currentSort == "year") {
-                            currentSortAscending = !currentSortAscending
+                        val currentState = viewModel.state.value as? FavoritesState.Content
+                        val ascending = if (currentState?.currentSort == "year") {
+                            !currentState.currentSortAscending
                         } else {
-                            currentSort = "year"
-                            currentSortAscending = true
+                            true
                         }
-                        updateSortButtonText()
-                        loadFilteredAndSorted()
+                        viewModel.processIntent(FavoritesIntent.Sort("year", ascending))
                         true
                     }
                     else -> false
@@ -160,27 +122,19 @@ class FavoritesFragment : Fragment() {
             setOnMenuItemClickListener { item ->
                 when (item.itemId) {
                     R.id.filter_all -> {
-                        currentFilter = null
-                        updateFilterButtonText()
-                        loadFilteredAndSorted()
+                        viewModel.processIntent(FavoritesIntent.Filter(null))
                         true
                     }
                     R.id.filter_completed -> {
-                        currentFilter = Status.COMPLETED
-                        updateFilterButtonText()
-                        loadFilteredAndSorted()
+                        viewModel.processIntent(FavoritesIntent.Filter(Status.COMPLETED))
                         true
                     }
                     R.id.filter_planned -> {
-                        currentFilter = Status.PLANNED
-                        updateFilterButtonText()
-                        loadFilteredAndSorted()
+                        viewModel.processIntent(FavoritesIntent.Filter(Status.PLANNED))
                         true
                     }
                     R.id.filter_abandoned -> {
-                        currentFilter = Status.ABANDONED
-                        updateFilterButtonText()
-                        loadFilteredAndSorted()
+                        viewModel.processIntent(FavoritesIntent.Filter(Status.ABANDONED))
                         true
                     }
                     else -> false
@@ -190,56 +144,51 @@ class FavoritesFragment : Fragment() {
         }
     }
 
-    private fun loadFilteredAndSorted() {
-        val filtered = when (currentFilter) {
-            null -> manageMovieListUseCase.getMovies()
-            else -> manageMovieListUseCase.getMoviesByStatus(currentFilter!!)
-        }
+    private fun showLoading() {
+        recyclerView.visibility = View.GONE
+        emptyTextView.visibility = View.GONE
+    }
 
-        val sorted = when (currentSort) {
-            "year" -> manageMovieListUseCase.getMoviesSortedByYear(currentSortAscending)
-            "rating" -> manageMovieListUseCase.getMoviesSortedByRating(currentSortAscending)
-            else -> filtered
-        }
-
-        if (sorted.isEmpty()) {
-            recyclerView.visibility = View.GONE
+    private fun showContent(movies: List<MediaItem>, sort: String, sortAscending: Boolean, filter: Status?) {
+        recyclerView.visibility = View.VISIBLE
+        if (movies.isEmpty()) {
             emptyTextView.visibility = View.VISIBLE
+            recyclerView.visibility = View.GONE
         } else {
-            recyclerView.visibility = View.VISIBLE
             emptyTextView.visibility = View.GONE
-            adapter.updateList(sorted)
+            adapter.updateList(movies)
+        }
+
+        val directionSymbol = if (sortAscending) "↑" else "↓"
+        buttonSort.text = when (sort) {
+            "rating" -> getString(R.string.sort_by_rating) + " $directionSymbol"
+            "year" -> getString(R.string.sort_by_year) + " $directionSymbol"
+            else -> getString(R.string.sort)
+        }
+        buttonFilter.text = when (filter) {
+            Status.COMPLETED -> getString(R.string.filter_completed)
+            Status.PLANNED -> getString(R.string.filter_planned)
+            Status.ABANDONED -> getString(R.string.filter_abandoned)
+            else -> getString(R.string.filter)
         }
     }
 
-    private fun loadFavorites() {
-        val favorites = manageMovieListUseCase.getMovies()
-
-        if (favorites.isEmpty()) {
-            recyclerView.visibility = View.GONE
-            emptyTextView.visibility = View.VISIBLE
-        } else {
-            recyclerView.visibility = View.VISIBLE
-            emptyTextView.visibility = View.GONE
-
-            val movies = favorites.filterIsInstance<Movie>()
-            adapter.updateList(movies)
-        }
+    private fun showError(error: com.darerm1.whatcha.domain.common.DomainError) {
+        android.widget.Toast.makeText(
+            requireContext(),
+            com.darerm1.whatcha.presentation.utils.ErrorHandler.getErrorMessage(requireContext(), error),
+            android.widget.Toast.LENGTH_SHORT
+        ).show()
+        recyclerView.visibility = View.GONE
+        emptyTextView.visibility = View.VISIBLE
+        emptyTextView.text = getString(R.string.error_loading_movies)
     }
 
     private fun openMovieDetails(movieId: Long) {
-        val listener = activity as? NavigationListener
-        listener?.openDetails(movieId)
+        (activity as? NavigationListener)?.openDetails(movieId)
     }
 
     private fun removeMovie(movie: MediaItem) {
-        when (val result = manageMovieListUseCase.removeMovieById(movie.id)) {
-            is Result.Success -> loadFavorites()
-            is Result.Error -> showError(ErrorHandler.getErrorMessage(requireContext(), result.error))
-        }
-    }
-
-    private fun showError(message: String) {
-        android.widget.Toast.makeText(requireContext(), message, android.widget.Toast.LENGTH_SHORT).show()
+        viewModel.processIntent(FavoritesIntent.RemoveMovie(movie))
     }
 }

@@ -1,5 +1,6 @@
-package com.darerm1.whatcha.presentation.fragments.home
+package com.darerm1.whatcha.presentation.fragments.home.adapter
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -7,8 +8,8 @@ import androidx.recyclerview.widget.RecyclerView
 import coil.dispose
 import coil.load
 import com.darerm1.whatcha.R
-import com.darerm1.whatcha.domain.entities.MediaItem
 import com.darerm1.whatcha.databinding.ItemMovieBinding
+import com.darerm1.whatcha.domain.entities.MediaItem
 
 class MovieViewHolder(
     private val binding: ItemMovieBinding,
@@ -53,13 +54,13 @@ class MovieViewHolder(
                 listener(
                     onSuccess = { _, _ ->
                         if (currentMovieId == movie.id) {
-                            android.util.Log.d("MovieViewHolder", "Poster loaded: ${movie.name}")
+                            Log.d("MovieViewHolder", "Poster loaded: ${movie.name}")
                             binding.tvPlaceholder.visibility = View.GONE
                         }
                     },
                     onError = { _, error ->
                         if (currentMovieId == movie.id) {
-                            android.util.Log.e("MovieViewHolder", "Failed to load poster for ${movie.name}: ${error.throwable?.message}")
+                            Log.e("MovieViewHolder", "Failed to load poster for ${movie.name}: ${error.throwable?.message}")
                         }
                     }
                 )
