@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:background="@drawable/splash_background">
 
-    <com.darerm1.whatcha.ui.views.SkySceneView
+    <com.darerm1.whatcha.presentation.views.SkySceneView
         android:id="@+id/skyScene"
         android:layout_width="0dp"
         android:layout_height="0dp"

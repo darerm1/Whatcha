@@ -1,0 +1,360 @@
+package com.darerm1.whatcha.presentation.fragments.details
+
+import android.app.Dialog
+import android.content.res.ColorStateList
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
+import android.os.Bundle
+import android.util.Log
+import android.util.TypedValue
+import android.view.Gravity
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.PopupMenu
+import androidx.appcompat.widget.AppCompatImageView
+import androidx.core.os.bundleOf
+import androidx.core.view.isVisible
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
+import coil.load
+import com.darerm1.whatcha.R
+import com.darerm1.whatcha.WhatchaApplication
+import com.darerm1.whatcha.domain.entities.enums.Status
+import com.darerm1.whatcha.domain.entities.Movie
+import com.darerm1.whatcha.domain.entities.MovieRatings
+import com.darerm1.whatcha.databinding.FragmentDetailBinding
+import com.darerm1.whatcha.presentation.utils.ErrorHandler
+import com.darerm1.whatcha.presentation.utils.RatingFormatter
+import com.darerm1.whatcha.domain.common.Result
+import com.darerm1.whatcha.presentation.activities.MainActivity
+import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
+
+class DetailFragment : Fragment() {
+
+    private var _binding: FragmentDetailBinding? = null
+    private val binding get() = _binding!!
+
+    private val repository by lazy { WhatchaApplication.instance.repository }
+    private val manageMovieListUseCase = (requireActivity() as MainActivity).useCase
+
+    private var movieId: Long = -1L
+    private var currentPosterUrl: String? = null
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = FragmentDetailBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        movieId = arguments?.getLong(ARG_MOVIE_ID, -1L) ?: -1L
+
+        binding.toolbar.setNavigationOnClickListener {
+            requireActivity().onBackPressedDispatcher.onBackPressed()
+        }
+        binding.ratingsTitle.text = RATINGS_SECTION_TITLE
+
+        binding.ratingStars.onRatingChange = { rating ->
+            updateRatingValue(rating)
+            binding.saveRatingButton.isEnabled = isInFavorites() && rating > 0f
+        }
+
+        binding.favoriteButton.setOnClickListener { toggleFavorite() }
+        binding.saveRatingButton.setOnClickListener { updateRating(binding.ratingStars.rating) }
+        binding.statusButton.setOnClickListener { showStatusMenu() }
+        binding.retryButton.setOnClickListener { loadMovie() }
+        binding.posterImage.setOnClickListener { showPosterPreview() }
+
+        loadMovie()
+    }
+
+    private fun showPosterPreview() {
+        val context = requireContext()
+        val dialog = Dialog(context, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+        val overlay = FrameLayout(context).apply {
+            setBackgroundColor(0x88000000.toInt())
+            setOnClickListener { dialog.dismiss() }
+        }
+        val padding = 24.dp
+        val imageView = AppCompatImageView(context).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                Gravity.CENTER
+            )
+            adjustViewBounds = true
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            setPadding(padding, padding, padding, padding)
+            setOnClickListener { dialog.dismiss() }
+        }
+
+        val posterUrl = currentPosterUrl
+        if (posterUrl.isNullOrBlank()) {
+            imageView.setImageResource(R.drawable.poster_placeholder_branded)
+        } else {
+            imageView.load(posterUrl) {
+                placeholder(R.drawable.poster_placeholder_branded)
+                error(R.drawable.poster_placeholder_branded)
+            }
+        }
+
+        overlay.addView(imageView)
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        dialog.window?.setDimAmount(0f)
+        dialog.setContentView(overlay)
+        dialog.show()
+    }
+
+    private fun loadMovie() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            when (val result = repository.getMovieById(movieId)) {
+                is Result.Success -> {
+                    val movie = result.data as? Movie ?: return@launch
+                    displayMovie(movie)
+                    showError(false)
+                }
+                is Result.Error -> {
+                    showError(true, ErrorHandler.getErrorMessage(requireContext(), result.error))
+                }
+            }
+        }
+    }
+
+    private fun showError(show: Boolean, message: String = "") {
+        binding.errorLayout.isVisible = show
+        if (show && message.isNotEmpty()) {
+            binding.errorText.text = message
+        }
+    }
+
+    private fun displayMovie(movie: Movie) {
+        binding.toolbar.title = movie.name
+        binding.titleText.text = movie.name
+        binding.descriptionText.text = movie.description
+        binding.metaText.text = getString(
+            R.string.detail_meta,
+            movie.year,
+            movie.genre.russianName,
+            movie.duration
+        )
+
+        bindRatingsChart(movie.ratings)
+        loadPoster(movie.posterUrl)
+
+        val isFavorite = manageMovieListUseCase.getMovies().any { it.id == movie.id }
+        updateFavoriteButton(isFavorite)
+        updateRatingState(movie.personalRating, isFavorite)
+        updateStatusButtonText(movie.status)
+    }
+
+    private fun bindRatingsChart(ratings: MovieRatings?) {
+        val hasRatings = ratings?.let {
+            listOf(
+                it.kp,
+                it.imdb,
+                it.tmdb,
+                it.filmCritics,
+                it.russianFilmCritics,
+                it.await
+            ).any { value -> value != null }
+        } == true
+
+        binding.ratingsSection.isVisible = hasRatings
+        binding.ratingsChart.ratings = ratings
+    }
+
+    private fun loadPoster(posterUrl: String?) {
+        currentPosterUrl = posterUrl
+        if (posterUrl.isNullOrBlank()) {
+            binding.posterImage.setImageResource(R.drawable.poster_placeholder_branded)
+        } else {
+            binding.posterImage.load(posterUrl) {
+                placeholder(R.drawable.poster_placeholder_branded)
+                error(R.drawable.poster_placeholder_branded)
+                listener(
+                    onSuccess = { _, _ ->
+                        Log.d("DetailFragment", "Poster loaded successfully for movie: $movieId")
+                    },
+                    onError = { _, error ->
+                        Log.e(
+                            "DetailFragment",
+                            "Failed to load poster for movie $movieId: ${error.throwable?.message}"
+                        )
+                    }
+                )
+            }
+        }
+    }
+
+    private fun updateFavoriteButton(isFavorite: Boolean) {
+        binding.favoriteButton.setImageResource(
+            if (isFavorite) R.drawable.ic_favorite_filled
+            else R.drawable.ic_favorite_border
+        )
+
+        val tintAttr = if (isFavorite) {
+            com.google.android.material.R.attr.colorError
+        } else {
+            com.google.android.material.R.attr.colorOnSurface
+        }
+
+        binding.favoriteButton.imageTintList = ColorStateList.valueOf(resolveThemeColor(tintAttr))
+    }
+
+    private fun updateRatingState(rating: Float?, isFavorite: Boolean) {
+        binding.ratingStars.rating = rating ?: 0f
+        binding.ratingStars.isEnabled = isFavorite
+        updateRatingValue(rating ?: 0f)
+        binding.saveRatingButton.isEnabled = isFavorite && (rating ?: 0f) > 0f
+    }
+
+    private fun updateRatingValue(rating: Float) {
+        binding.ratingValue.text = if (rating > 0f) {
+            "$PERSONAL_RATING_PREFIX: ${RatingFormatter.formatPersonalRating(rating)}/10"
+        } else {
+            getString(R.string.detail_rating_not_set)
+        }
+    }
+
+    private fun updateStatusButtonText(status: Status) {
+        val statusText = getString(R.string.status_label) + " " + when (status) {
+            Status.PLANNED -> getString(R.string.status_planned)
+            Status.COMPLETED -> getString(R.string.status_completed)
+            Status.ABANDONED -> getString(R.string.status_abandoned)
+            Status.NOT_SET -> getString(R.string.status_not_set)
+        }
+        binding.statusButton.text = statusText
+    }
+
+    private fun showStatusMenu() {
+        PopupMenu(requireContext(), binding.statusButton).apply {
+            menuInflater.inflate(R.menu.menu_status, menu)
+            setOnMenuItemClickListener { item ->
+                val status = when (item.itemId) {
+                    R.id.status_planned -> Status.PLANNED
+                    R.id.status_completed -> Status.COMPLETED
+                    R.id.status_abandoned -> Status.ABANDONED
+                    R.id.status_not_set -> Status.NOT_SET
+                    else -> return@setOnMenuItemClickListener false
+                }
+                updateStatus(status)
+                true
+            }
+            show()
+        }
+    }
+
+    private fun updateStatus(newStatus: Status) {
+        if (!isInFavorites()) {
+            showSnackbar(R.string.detail_add_to_favorites_first)
+            return
+        }
+
+        when (newStatus) {
+            Status.PLANNED -> manageMovieListUseCase.markAsPlanned(movieId)
+            Status.COMPLETED -> manageMovieListUseCase.markAsCompleted(movieId)
+            Status.ABANDONED -> manageMovieListUseCase.markAsAbandoned(movieId)
+            Status.NOT_SET -> manageMovieListUseCase.markAsNotSet(movieId)
+        }
+
+        showSnackbar(R.string.status_updated)
+        loadMovie()
+    }
+
+    private fun updateRating(value: Float) {
+        if (!isInFavorites()) {
+            showSnackbar(R.string.detail_add_to_favorites_first)
+            return
+        }
+
+        val result = manageMovieListUseCase.updateRating(movieId, value)
+
+        val message = when (result) {
+            is Result.Success -> getString(R.string.detail_rating_saved)
+            is Result.Error -> ErrorHandler.getErrorMessage(requireContext(), result.error)
+        }
+
+        showSnackbar(message)
+        loadMovie()
+    }
+
+    private fun toggleFavorite() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            when (val result = repository.getMovieById(movieId)) {
+                is Result.Success -> {
+                    val movie = result.data as? Movie ?: return@launch
+                    val isFav = isInFavorites()
+
+                    val favResult = if (isFav) {
+                        manageMovieListUseCase.removeMovieById(movie.id)
+                    } else {
+                        manageMovieListUseCase.addMovie(movie)
+                    }
+
+                    val message = when (favResult) {
+                        is Result.Success -> getString(
+                            if (isFav) R.string.detail_removed_from_favorites
+                            else R.string.detail_added_to_favorites
+                        )
+                        is Result.Error -> ErrorHandler.getErrorMessage(requireContext(), favResult.error)
+                    }
+
+                    showSnackbar(message)
+                    loadMovie()
+                }
+                is Result.Error -> {
+                    showSnackbar(ErrorHandler.getErrorMessage(requireContext(), result.error))
+                }
+            }
+        }
+    }
+
+    private fun isInFavorites(): Boolean {
+        return manageMovieListUseCase.getMovies().any { it.id == movieId }
+    }
+
+    private fun showSnackbar(messageResId: Int) {
+        Snackbar.make(binding.root, messageResId, Snackbar.LENGTH_SHORT).show()
+    }
+
+    private fun showSnackbar(message: String) {
+        Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
+    }
+
+    private fun resolveThemeColor(attr: Int): Int {
+        val typedValue = TypedValue()
+        requireContext().theme.resolveAttribute(attr, typedValue, true)
+        return typedValue.data
+    }
+
+    private val Int.dp: Int
+        get() = (this * resources.displayMetrics.density).roundToInt()
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+
+    companion object {
+        private const val ARG_MOVIE_ID = "movie_id"
+        private const val RATINGS_SECTION_TITLE = "\u0420\u0435\u0439\u0442\u0438\u043d\u0433\u0438 \u043f\u043b\u043e\u0449\u0430\u0434\u043e\u043a"
+        private const val PERSONAL_RATING_PREFIX = "\u0412\u0430\u0448\u0430 \u043e\u0446\u0435\u043d\u043a\u0430"
+        private const val LOADING_MOVIE_ERROR = "\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c \u0444\u0438\u043b\u044c\u043c"
+
+        fun newInstance(movieId: Long): DetailFragment {
+            return DetailFragment().apply {
+                arguments = bundleOf(ARG_MOVIE_ID to movieId)
+            }
+        }
+    }
+}

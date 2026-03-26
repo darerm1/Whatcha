@@ -1,6 +1,6 @@
 package com.darerm1.whatcha.data.local.cache
 
-import com.darerm1.whatcha.data.interfaces.MediaItem
+import com.darerm1.whatcha.domain.entities.MediaItem
 
 class MoviesMemoryCache(private val maxSize: Int = 100) {
     private val cache = object : LinkedHashMap<Long, MediaItem>(16, 0.75f, true) {

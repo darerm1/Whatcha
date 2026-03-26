@@ -1,6 +1,6 @@
 package com.darerm1.whatcha.data.remote.datasource
 
-import com.darerm1.whatcha.data.remote.SafeApiCall
+import com.darerm1.whatcha.data.network.SafeApiCall
 import com.darerm1.whatcha.data.remote.api.PoiskKinoApi
 import com.darerm1.whatcha.data.common.NetworkResult
 import com.darerm1.whatcha.data.remote.dto.MovieDto

@@ -128,7 +128,7 @@
                     android:layout_marginTop="10dp"
                     app:cardCornerRadius="20dp">
 
-                    <com.darerm1.whatcha.ui.views.RatingsChartView
+                    <com.darerm1.whatcha.presentation.views.RatingsChartView
                         android:id="@+id/ratingsChart"
                         android:layout_width="match_parent"
                         android:layout_height="220dp"
@@ -148,7 +148,7 @@
                 android:text="@string/detail_rating_label"
                 android:textAppearance="?attr/textAppearanceTitleMedium" />
 
-            <com.darerm1.whatcha.ui.views.StarRatingView
+            <com.darerm1.whatcha.presentation.views.StarRatingView
                 android:id="@+id/ratingStars"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
