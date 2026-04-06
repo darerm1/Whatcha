@@ -80,6 +80,9 @@
     <string name="error_server">Ошибка сервера: %d</string>
     <string name="error_unknown">Произошла неизвестная ошибка: %s</string>
     <string name="error_loading">Ошибка загрузки: %s</string>
-
+    <string name="error_movie_exists">Фильм уже в списке</string>
+    <string name="error_movie_not_found">Фильм не найден</string>
+    <string name="error_mapping_failed">Ошибка обработки данных: %s</string>
+    <string name="error_loading_movies">Error loading movies</string>
 
 </resources>
