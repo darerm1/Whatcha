@@ -44,7 +44,17 @@ class DetailViewModel(
             _state.value = DetailState.Loading
             when (val result = repository.getMovieById(movieId)) {
                 is Result.Success -> {
-                    val movie = result.data as? Movie ?: return@launch
+                    val apiMovie = result.data as? Movie ?: return@launch
+                    val localMovie = useCase.findMovieById(movieId)
+                    val movie = if (localMovie != null) {
+                        apiMovie.copy(
+                            personalRating = localMovie.personalRating,
+                            status = localMovie.status,
+                            date = localMovie.date
+                        )
+                    } else {
+                        apiMovie
+                    }
                     val isFavorite = useCase.getMovies().any { it.id == movie.id }
                     _state.value = DetailState.Content(
                         movie = movie,

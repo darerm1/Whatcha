@@ -72,14 +72,12 @@ class FavoritesViewModel(
     }
 
     private fun applyFiltersAndSort() {
-        // Фильтрация
         val filtered = if (currentFilter != null) {
             manageMovieListUseCase.getMoviesByStatus(currentFilter!!)
         } else {
             allMovies
         }
 
-        // Сортировка
         val sorted = when (currentSort) {
             "year" -> manageMovieListUseCase.getMoviesSortedByYear(currentSortAscending)
             "rating" -> manageMovieListUseCase.getMoviesSortedByRating(currentSortAscending)

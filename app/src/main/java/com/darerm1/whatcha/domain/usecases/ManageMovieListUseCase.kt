@@ -71,4 +71,6 @@ class ManageMovieListUseCase(private val movieListRepo: MovieListRepository) {
     fun getMovies(): List<MediaItem> {
         return movieListRepo.getMovies()
     }
+
+    fun findMovieById(id: Long): MediaItem? = movieListRepo.findMovieById(id)
 }
