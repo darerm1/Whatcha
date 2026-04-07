@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+    <color name="ds_purple">#6200EE</color>
+    <color name="ds_purple_dark">#3700B3</color>
+    <color name="ds_white">#FFFFFF</color>
+    <color name="ds_black">#000000</color>
+    <color name="ds_gray_light">#F5F5F5</color>
+    <color name="ds_gray">#9E9E9E</color>
+    <color name="ds_error">#B00020</color>
+    <color name="ds_filled_heart">#C7475F</color>
+</resources>

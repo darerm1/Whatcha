@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="retry">Повторить</string>
+    <string name="status_planned">Запланирован</string>
+    <string name="status_completed">Просмотрен</string>
+    <string name="status_abandoned">Прерван</string>
+    <string name="status_not_set">Не установлен</string>
+    <string name="error_unknown">Произошла ошибка</string>
+</resources>

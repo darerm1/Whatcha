@@ -71,4 +71,5 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.lifecycle.runtime.ktx)
+    implementation(project(":designsystem"))
 }

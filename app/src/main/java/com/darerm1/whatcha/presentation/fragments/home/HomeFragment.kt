@@ -1,11 +1,11 @@
 package com.darerm1.whatcha.presentation.fragments.home
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.ViewModelProvider
-import androidx.appcompat.widget.SearchView
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -17,13 +17,15 @@ import com.darerm1.whatcha.domain.common.DomainError
 import com.darerm1.whatcha.presentation.NavigationListener
 import com.darerm1.whatcha.presentation.activities.MainActivity
 import com.darerm1.whatcha.presentation.fragments.home.adapter.ListItem
-import com.darerm1.whatcha.presentation.fragments.home.adapter.MovieAdapter
 import com.darerm1.whatcha.presentation.fragments.home.viewmodel.HomeIntent
 import com.darerm1.whatcha.presentation.fragments.home.viewmodel.HomeState
 import com.darerm1.whatcha.presentation.fragments.home.viewmodel.HomeViewModel
 import com.darerm1.whatcha.presentation.fragments.home.viewmodel.HomeViewModelFactory
 import com.darerm1.whatcha.presentation.utils.ErrorHandler
 import kotlinx.coroutines.launch
+import com.darerm1.whatcha.presentation.fragments.home.adapter.MovieCardAdapter
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 
 class HomeFragment : Fragment() {
 
@@ -32,12 +34,15 @@ class HomeFragment : Fragment() {
 
     private lateinit var viewModel: HomeViewModel
 
+    private var searchJob: Job? = null
+
     private val adapter by lazy {
-        MovieAdapter(
+        MovieCardAdapter(
             onFavoriteClick = { movie -> viewModel.processIntent(HomeIntent.ToggleFavorite(movie)) },
             onItemClick = { movie -> (activity as? NavigationListener)?.openDetails(movie.id) },
             isFavorite = { movieId -> viewModel.getFavoriteIds().contains(movieId) },
             onLoadMoreClick = {
+                Log.d("HomeFragment", "LoadMore clicked")
                 viewModel.processIntent(HomeIntent.LoadMore)
             }
         )
@@ -59,8 +64,8 @@ class HomeFragment : Fragment() {
         )[HomeViewModel::class.java]
 
         setupRecyclerView()
-        setupSearchView()
-        setupRetryButton()
+        setupSearchInput()
+        setupErrorView()
 
         lifecycleScope.launch {
             viewModel.state.collect { state ->
@@ -73,63 +78,59 @@ class HomeFragment : Fragment() {
         }
     }
 
+    private fun setupSearchInput() {
+        binding.searchInput.onQueryChangeListener = { query ->
+            searchJob?.cancel()
+            searchJob = lifecycleScope.launch {
+                delay(300)
+                viewModel.processIntent(HomeIntent.Search(query))
+            }
+        }
+        binding.searchInput.onClearListener = {
+            viewModel.processIntent(HomeIntent.Search(""))
+        }
+    }
+
+    private fun setupErrorView() {
+        binding.errorView.onRetryClickListener = {
+            viewModel.processIntent(HomeIntent.Load)
+        }
+    }
+
     private fun showLoading() {
         binding.progressBar.isVisible = true
         binding.recyclerView.isVisible = false
-        binding.errorLayout.isVisible = false
+        binding.errorView.isVisible = false
         binding.tvEmpty.isVisible = false
     }
 
     private fun showContent(movies: List<MediaItem>, hasMore: Boolean, isSearchMode: Boolean) {
         binding.progressBar.isVisible = false
-        binding.errorLayout.isVisible = false
+        binding.errorView.isVisible = false
         binding.recyclerView.isVisible = true
         binding.tvEmpty.isVisible = movies.isEmpty()
 
         val items = movies.map { ListItem.MovieItem(it) }
-        if (!isSearchMode && hasMore) {
-            adapter.submitList(items + ListItem.LoadMoreItem)
-        } else {
-            adapter.submitList(items)
-        }
+        adapter.submitMovieList(movies, !isSearchMode && hasMore)
     }
 
     private fun showError(error: DomainError) {
         binding.progressBar.isVisible = false
         binding.recyclerView.isVisible = false
         binding.tvEmpty.isVisible = false
-        binding.errorLayout.isVisible = true
-        binding.errorText.text = ErrorHandler.getErrorMessage(requireContext(), error)
+        binding.errorView.isVisible = true
+        binding.errorView.setError(ErrorHandler.getErrorMessage(requireContext(), error), showRetry = true)
     }
 
     private fun setupRecyclerView() {
         val layoutManager = GridLayoutManager(requireContext(), 3)
         layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
             override fun getSpanSize(position: Int): Int {
-                return when (adapter.currentList.getOrNull(position)) {
-                    is ListItem.LoadMoreItem -> 3
-                    else -> 1
-                }
+                return if (adapter.isLoadMorePosition(position)) 3 else 1
             }
         }
         binding.recyclerView.layoutManager = layoutManager
         binding.recyclerView.adapter = adapter
-    }
-
-    private fun setupSearchView() {
-        binding.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?) = true
-            override fun onQueryTextChange(newText: String?): Boolean {
-                viewModel.processIntent(HomeIntent.Search(newText.orEmpty()))
-                return true
-            }
-        })
-    }
-
-    private fun setupRetryButton() {
-        binding.retryButton.setOnClickListener {
-            viewModel.processIntent(HomeIntent.Load)
-        }
     }
 
     override fun onDestroyView() {
