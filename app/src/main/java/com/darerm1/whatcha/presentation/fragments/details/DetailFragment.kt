@@ -72,6 +72,10 @@ class DetailFragment : Fragment() {
 
         binding.ratingStars.onRatingChange = { rating ->
             updateRatingValue(rating)
+            val currentState = viewModel.state.value
+            if (currentState is DetailState.Content) {
+                binding.saveRatingButton.isEnabled = rating > 0f && currentState.isFavorite
+            }
         }
 
         binding.favoriteButton.setOnClickListener {

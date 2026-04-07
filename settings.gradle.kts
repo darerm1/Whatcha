@@ -21,4 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Whatcha"
 include(":app")
- 
+include(":designsystem")

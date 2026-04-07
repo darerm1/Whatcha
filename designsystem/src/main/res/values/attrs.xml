@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+    <declare-styleable name="MovieCard">
+        <attr name="movieTitle" format="string" />
+        <attr name="yearGenre" format="string" />
+        <attr name="posterUrl" format="string" />
+        <attr name="isFavorite" format="boolean" />
+        <attr name="placeholderDrawable" format="reference" />
+    </declare-styleable>
+
+    <declare-styleable name="RatingBar">
+        <attr name="rating" format="float" />
+        <attr name="ratingEditable" format="boolean" />
+        <attr name="ratingStepSize" format="float" />
+        <attr name="ratingIconSize" format="dimension" />
+    </declare-styleable>
+
+    <declare-styleable name="PrimaryButton">
+        <attr name="primaryButtonText" format="string" />
+    </declare-styleable>
+
+    <declare-styleable name="SearchInput">
+        <attr name="queryText" format="string" />
+        <attr name="hint" format="string" />
+        <attr name="clearButtonVisible" format="boolean" />
+    </declare-styleable>
+
+    <declare-styleable name="StatusChip">
+        <attr name="status" format="enum">
+            <enum name="planned" value="0" />
+            <enum name="completed" value="1" />
+            <enum name="abandoned" value="2" />
+            <enum name="not_set" value="3" />
+        </attr>
+        <attr name="chipText" format="string" />
+    </declare-styleable>
+
+    <declare-styleable name="ErrorView">
+        <attr name="errorText" format="string" />
+        <attr name="buttonText" format="string" />
+        <attr name="showButton" format="boolean" />
+    </declare-styleable>
+</resources>
