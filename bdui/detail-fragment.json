@@ -1,0 +1,259 @@
+{
+  "screenId": "detail_fragment",
+  "kind": "fragment",
+  "version": 3,
+  "theme": {
+    "textColor": "#000000",
+    "primaryColor": "#6200EE",
+    "onPrimaryColor": "#FFFFFF",
+    "surfaceColor": "#FFFFFF",
+    "accentColor": "#C7475F",
+    "contentPadding": {
+      "horizontal": 16,
+      "vertical": 16
+    },
+    "titleTypography": {
+      "textAppearance": "textAppearanceHeadlineSmall",
+      "textColor": "#6200EE"
+    },
+    "bodyTypography": {
+      "textAppearance": "textAppearanceBodyLarge"
+    },
+    "metaTypography": {
+      "textAppearance": "textAppearanceBodyMedium"
+    },
+    "sectionTypography": {
+      "textAppearance": "textAppearanceTitleMedium"
+    },
+    "cardStyle": {
+      "backgroundColor": "#FFFFFF",
+      "cornerRadiusDp": 20
+    },
+    "buttonStyle": {
+      "cornerRadiusDp": 14
+    }
+  },
+  "items": [
+    {
+      "type": "toolbar",
+      "elementId": "detail_toolbar",
+      "textBinding": "toolbarTitle",
+      "action": {
+        "type": "navigate_back"
+      },
+      "data": {
+        "navigationIcon": "ic_arrow_back"
+      }
+    },
+    {
+      "type": "error_view",
+      "elementId": "detail_error",
+      "textBinding": "errorMessage",
+      "visibleBinding": "showError",
+      "action": {
+        "type": "retry_load_detail"
+      },
+      "data": {
+        "showRetry": true
+      },
+      "appearance": {
+        "paddingDp": 16,
+        "buttonText": "Повторить"
+      }
+    },
+    {
+      "type": "poster_image",
+      "elementId": "movie_poster",
+      "visibleBinding": "showContent",
+      "layout": {
+        "mode": "block"
+      },
+      "action": {
+        "type": "open_poster_preview"
+      },
+      "data": {
+        "urlBinding": "posterUrl",
+        "placeholder": "poster_placeholder_branded",
+        "scaleType": "centerInside"
+      },
+      "appearance": {
+        "heightDp": 220,
+        "marginTopDp": 0
+      }
+    },
+    {
+      "type": "text",
+      "elementId": "movie_title",
+      "textBinding": "movieTitle",
+      "visibleBinding": "showContent",
+      "layout": {
+        "mode": "inline",
+        "rowId": "title_row",
+        "weight": 1
+      },
+      "appearance": {
+        "marginTopDp": 16,
+        "typography": "titleTypography"
+      }
+    },
+    {
+      "type": "icon_toggle",
+      "elementId": "favorite_button",
+      "visibleBinding": "showContent",
+      "layout": {
+        "mode": "inline",
+        "rowId": "title_row",
+        "align": "end"
+      },
+      "action": {
+        "type": "toggle_favorite"
+      },
+      "data": {
+        "selectedBinding": "favoriteSelected",
+        "icon": "ic_favorite_border",
+        "selectedIcon": "ic_favorite_filled"
+      },
+      "appearance": {
+        "sizeDp": 48,
+        "tintColor": "#000000",
+        "selectedTintColor": "#C7475F"
+      }
+    },
+    {
+      "type": "text",
+      "elementId": "movie_meta",
+      "textBinding": "movieMeta",
+      "visibleBinding": "showContent",
+      "layout": {
+        "mode": "block"
+      },
+      "appearance": {
+        "marginTopDp": 8,
+        "typography": "metaTypography"
+      }
+    },
+    {
+      "type": "text",
+      "elementId": "movie_description",
+      "textBinding": "movieDescription",
+      "visibleBinding": "showContent",
+      "layout": {
+        "mode": "block"
+      },
+      "appearance": {
+        "marginTopDp": 16,
+        "typography": "bodyTypography"
+      }
+    },
+    {
+      "type": "ratings_chart",
+      "elementId": "ratings_chart",
+      "text": "Рейтинги площадок",
+      "visibleBinding": "showRatingsSection",
+      "layout": {
+        "mode": "block"
+      },
+      "data": {
+        "ratingsBinding": "ratingsPayload"
+      },
+      "appearance": {
+        "marginTopDp": 20,
+        "heightDp": 220,
+        "cardStyle": "cardStyle",
+        "chartPaddingTopDp": 16,
+        "chartPaddingHorizontalDp": 12,
+        "chartPaddingBottomDp": 12,
+        "cardMarginTopDp": 10
+      }
+    },
+    {
+      "type": "text",
+      "elementId": "personal_rating_title",
+      "text": "Ваша оценка",
+      "visibleBinding": "showContent",
+      "layout": {
+        "mode": "block"
+      },
+      "appearance": {
+        "marginTopDp": 20,
+        "typography": "sectionTypography"
+      }
+    },
+    {
+      "type": "rating_bar",
+      "elementId": "personal_rating",
+      "enabledBinding": "ratingEnabled",
+      "visibleBinding": "showContent",
+      "layout": {
+        "mode": "block"
+      },
+      "action": {
+        "type": "change_rating"
+      },
+      "data": {
+        "ratingBinding": "personalRatingValue"
+      },
+      "appearance": {
+        "marginTopDp": 12,
+        "heightDp": 48,
+        "paddingTopDp": 4,
+        "paddingBottomDp": 4
+      }
+    },
+    {
+      "type": "text",
+      "elementId": "personal_rating_value",
+      "textBinding": "personalRatingText",
+      "visibleBinding": "showContent",
+      "layout": {
+        "mode": "block"
+      },
+      "appearance": {
+        "marginTopDp": 4,
+        "typography": "metaTypography"
+      }
+    },
+    {
+      "type": "primary_button",
+      "elementId": "save_rating",
+      "text": "Сохранить оценку",
+      "enabledBinding": "saveRatingEnabled",
+      "visibleBinding": "showContent",
+      "layout": {
+        "mode": "block"
+      },
+      "action": {
+        "type": "one_click",
+        "effects": [
+          {
+            "type": "save_rating"
+          },
+          {
+            "type": "show_feedback",
+            "text": "Оценка сохранена"
+          }
+        ]
+      },
+      "appearance": {
+        "marginTopDp": 12,
+        "style": "buttonStyle"
+      }
+    },
+    {
+      "type": "primary_button",
+      "elementId": "status_button",
+      "textBinding": "statusButtonTitle",
+      "visibleBinding": "showContent",
+      "layout": {
+        "mode": "block"
+      },
+      "action": {
+        "type": "open_status_menu"
+      },
+      "appearance": {
+        "marginTopDp": 16,
+        "style": "buttonStyle"
+      }
+    }
+  ]
+}

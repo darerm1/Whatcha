@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "appId": "com.darerm1.whatcha",
+  "entrypoint": "detail_fragment",
+  "screens": [
+    {
+      "id": "detail_fragment",
+      "kind": "fragment",
+      "path": "com.darerm1.whatcha/lab7/server-sdui/v1/fragments/detail"
+    }
+  ]
+}
