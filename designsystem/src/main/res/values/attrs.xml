@@ -36,6 +36,10 @@
         <attr name="chipText" format="string" />
     </declare-styleable>
 
+    <declare-styleable name="SecondaryButton">
+        <attr name="secondaryButtonText" format="string" />
+    </declare-styleable>
+
     <declare-styleable name="ErrorView">
         <attr name="errorText" format="string" />
         <attr name="buttonText" format="string" />

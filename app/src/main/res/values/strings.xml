@@ -85,4 +85,13 @@
     <string name="error_mapping_failed">Ошибка обработки данных: %s</string>
     <string name="error_loading_movies">Error loading movies</string>
 
+    <!-- SDUI -->
+    <string name="recommendation_title">Рекомендация дня</string>
+    <string name="recommendation_subtitle">Посмотрите, что мы подобрали для вас</string>
+    <string name="sdui_share_chooser">Поделиться</string>
+    <string name="sdui_added_to_favorites">«%s» добавлен в избранное</string>
+    <string name="sdui_rating_saved">Оценка %d сохранена</string>
+    <string name="sdui_status_updated">Статус: %s</string>
+    <string name="sdui_add_favorite_error">Не удалось добавить в избранное</string>
+
 </resources>
