@@ -1,186 +1,177 @@
-# Серверная конфигурация BDUI
+# Статический BDUI-контракт
 
-В этой папке лежит серверная SDUI-конфигурация для лабораторной работы:
+В этой папке лежат статические файлы для лабораторной по BDUI:
 
-- `detail-fragment.json`
 - `manifest.json`
+- `detail-fragment.json`
 - `publish-bdui.ps1`
 
-## Что описывает конфиг
-
-В текущей итерации server-driven экраном считается только `DetailFragment`.
-
-- `manifest.json` описывает точку входа и список доступных экранов.
-- `detail-fragment.json` описывает один экран фильма, который клиент должен собрать по JSON.
-
-`MainActivity` при этом остаётся нативным контейнером и не переводится в BDUI.
+Они описывают один server-driven экран: `DetailFragment`.
 
 ## Структура экрана
 
-Экран описывается коротким JSON формата:
+Файл `detail-fragment.json` состоит из следующих частей:
 
-- `screenId` — идентификатор экрана
-- `kind` — тип контейнера, сейчас `fragment`
-- `version` — версия схемы
-- `theme` — общие цвета, типографика и стиль-токены экрана
-- `items` — упорядоченный список элементов экрана
+- `screenId / kind / version` — метаинформация экрана
+- `screenStates` — поддерживаемые состояния экрана
+- `defaults` — значения по умолчанию для элементов
+- `theme` — токены темы, типографика и общие стилевые объекты
+- `items` — список компонентов экрана
 
-## Общая схема item
+## Контракт состояния
 
-Каждый элемент в `items` может содержать:
+Объект состояния не дублируется внутри самого JSON-экрана, а описывается этой документацией. Он должен прийти вместе со схемой экрана или быть подготовлен клиентом до рендера.
 
-- `type` — тип компонента, который должен поддерживать клиент
-- `elementId` — стабильный идентификатор элемента
-- `text` — статический текст
-- `textBinding` — ключ для динамического текста из состояния клиента
-- `visibleBinding` — ключ для готового флага видимости
-- `enabledBinding` — ключ для готового флага доступности
-- `layout` — минимальные подсказки по размещению
-- `appearance` — отступы, размеры и визуальные параметры
-- `action` — описание действия при взаимодействии
-- `data` — специальные поля конкретного компонента
+Обязательные поля:
 
-Не все поля обязательны. Конкретный набор зависит от `type`.
+- `state`: `loading | content | error | empty`
+- `toolbarTitle`
+- `showRatingsSection`
+- `favoriteSelected`
+- `ratingEnabled`
+- `personalRatingValue`
+- `personalRatingText`
+- `saveRatingEnabled`
+- `statusButtonTitle`
 
-## Поддерживаемые типы в текущем экране
+Опциональные поля:
 
-В `detail-fragment.json` сейчас используются:
+- `errorMessage`
+- `posterUrl`
+- `movieTitle`
+- `movieMeta`
+- `movieDescription`
+- `ratingsPayload`
 
-- `toolbar`
-- `error_view`
-- `poster_image`
-- `text`
-- `icon_toggle`
-- `ratings_chart`
-- `rating_bar`
-- `primary_button`
+`ratingsPayload` имеет форму:
 
-Текстовые элементы специально унифицированы до одного типа `text`. Различия между заголовком, мета-информацией, описанием и вспомогательным текстом задаются через `appearance.typography`.
-
-## Theme
-
-Блок `theme` хранит общие значения экрана:
-
-- цвета
-- отступы экрана
-- токены типографики
-- токены карточек
-- токены кнопок
-
-Это нужно, чтобы клиент не хардкодил внешний вид экрана, а брал его из JSON.
-
-## Layout
-
-`layout` сделан намеренно минимальным, чтобы клиент оставался тонким и при этом не угадывал композицию элементов.
-
-Поддерживаемые поля:
-
-- `mode: "block"` — обычный вертикальный элемент на всю ширину
-- `mode: "inline"` — элемент внутри горизонтальной строки
-- `rowId` — связывает несколько inline-элементов в одну строку
-- `weight` — вес элемента внутри строки
-- `align` — дополнительная подсказка выравнивания, например `end`
-
-Это используется, например, для пары:
-
-- `movie_title`
-- `favorite_button`
-
-Чтобы клиент понимал, что они должны находиться в одной строке.
-
-## Appearance
-
-`appearance` хранит визуальные параметры конкретного элемента:
-
-- `marginTopDp`
-- `heightDp`
-- `sizeDp`
-- `paddingDp`
-- `paddingTopDp`
-- `paddingBottomDp`
-- `typography`
-- `style`
-- и другие параметры, если они относятся именно к внешнему виду
-
-Общее правило:
-
-- общие стили экрана идут в `theme`
-- локальные стили конкретного элемента идут в `appearance`
-
-## Data
-
-`data` хранит поля, которые нужны только конкретному типу компонента и не должны раздувать общую схему.
-
-Примеры:
-
-- `navigationIcon`
-- `urlBinding`
-- `placeholder`
-- `scaleType`
-- `selectedBinding`
-- `icon`
-- `selectedIcon`
-- `ratingsBinding`
-- `ratingBinding`
-
-То есть клиент сначала смотрит на `type`, а потом уже читает нужные поля из `data`.
-
-## Action
-
-`action` описывает семантическое действие элемента.
-
-Примеры текущих `action.type`:
-
-- `navigate_back`
-- `retry_load_detail`
-- `open_poster_preview`
-- `toggle_favorite`
-- `change_rating`
-- `one_click`
-- `open_status_menu`
-
-У некоторых действий есть `effects`, например у `save_rating`.
-
-Примеры текущих `effect.type`:
-
-- `save_rating`
-- `show_feedback`
-
-Клиент должен не придумывать поведение сам, а маппить известные action/effect type на заранее реализованные обработчики.
-
-
-## Echo API
-
-Базовый namespace для публикации:
-
-- `com.darerm1.whatcha/lab7/server-sdui/v1`
-
-Пути:
-
-- `manifest`
-- `fragments/detail`
-
-## Публикация на сервер
-
-Запуск:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\bdui\publish-bdui.ps1
+```json
+{
+  "kp": 8.4,
+  "imdb": 8.7,
+  "filmCritics": 7.9,
+  "russianFilmCritics": 60.0
+}
 ```
 
-Скрипт:
+## Состояния экрана
 
-- берёт `manifest.json` и `detail-fragment.json`
-- отправляет их в Echo API через `PUT`
-- после этого делает `GET` для проверки
+Экран поддерживает четыре состояния:
 
-## Что должен делать клиент
+- `loading` — данные ещё загружаются, контент не показывается
+- `content` — показывается основной экран фильма
+- `error` — показывается `error_view`
+- `empty` — данных для показа нет
 
-Клиентская часть должна:
+Источником истины для базовой видимости является поле `state`.
 
-1. Получить JSON экрана.
-2. Прочитать `theme`.
-3. Пройти по `items` в заданном порядке.
-4. Для каждого `item.type` выбрать нужный renderer.
-5. Применить `layout`, `appearance`, `data` и `action`.
-6. Собрать итоговый экран максимально близко к текущему `DetailFragment`.
+- если у элемента нет `visibleStates`, используется `defaults.visibleStates`
+- `visibleStates` на компоненте переопределяет это правило
+- `showRatingsSection` остаётся отдельным бизнес-флагом, потому что это не состояние всего экрана, а условие показа конкретного блока
+
+## Пример payload
+
+```json
+{
+  "state": "content",
+  "toolbarTitle": "Рождественский роман на родео",
+  "showRatingsSection": true,
+  "posterUrl": "https://example.com/poster.jpg",
+  "movieTitle": "Рождественский роман на родео",
+  "movieMeta": "2025 • драма • 0 мин",
+  "movieDescription": "Наездница родео Эмма возвращается домой и пытается начать жизнь заново.",
+  "favoriteSelected": false,
+  "ratingsPayload": {
+    "imdb": 6.0
+  },
+  "ratingEnabled": true,
+  "personalRatingValue": 0,
+  "personalRatingText": "Оценка не задана",
+  "saveRatingEnabled": false,
+  "statusButtonTitle": "Статус: Не установлен"
+}
+```
+
+## Поддерживаемые компоненты
+
+Клиент должен уметь рендерить следующие типы:
+
+- `toolbar`
+  Обязательные поля: `elementId`, `textBinding` или `text`, `action`
+- `error_view`
+  Обязательные поля: `elementId`, `textBinding` или `text`
+  Опциональные поля: `action`, `data.showRetry`, `appearance.buttonText`
+- `loading_view`
+  Обязательные поля: `elementId`
+- `empty_view`
+  Обязательные поля: `elementId`, `textBinding` или `text`
+- `poster_image`
+  Обязательные поля: `elementId`, `data.urlBinding` или `data.url`
+- `text`
+  Обязательные поля: `elementId`, `textBinding` или `text`
+- `icon_toggle`
+  Обязательные поля: `elementId`, `data.icon`, `data.selectedIcon`
+- `ratings_chart`
+  Обязательные поля: `elementId`, `data.ratingsBinding` или `data.ratings`
+- `rating_bar`
+  Обязательные поля: `elementId`, `data.ratingBinding` или `data.rating`
+- `primary_button`
+  Обязательные поля: `elementId`, `textBinding` или `text`
+
+## Layout-правила
+
+В контракте используются простые layout-хинты:
+
+- если `layout` не задан, используется `defaults.layout`
+- `layout.mode = "block"` — элемент занимает отдельную строку
+- `layout.mode = "inline"` — элемент рендерится в общей строке
+- `rowId` — связывает элементы одной строки
+- `weight` — задаёт растягивание элемента внутри строки
+- `align = "end"` — выравнивает inline-элемент к концу строки
+
+Более сложный layout engine в этом контракте не используется.
+
+## Семантика action
+
+Клиент должен трактовать `action.type` так:
+
+- `navigate_back` — закрыть текущий экран
+- `retry_load_detail` — повторно запросить данные detail-экрана без optimistic update
+- `open_poster_preview` — открыть постер в preview-режиме
+- `toggle_favorite` — переключить состояние избранного; наружу уходит событие с `elementId` и текущим `movieId` контекста; optimistic update не обязателен
+- `change_rating` — обновить локально выбранное значение рейтинга; наружу уходит новое число рейтинга
+- `one_click` — выполнить список `effects` по порядку
+- `open_status_menu` — открыть меню выбора статуса; наружу уходит выбранное значение статуса после подтверждения
+
+Поддерживаемые `effects`:
+
+- `save_rating` — сохранить текущую оценку
+- `show_feedback` — показать сообщение пользователю
+
+## Темизация и ресурсы
+
+В `theme` используются не жёсткие hex-цвета, а токены текущей Android-темы:
+
+- `colorBackground`
+- `colorSurface`
+- `colorPrimary`
+- `colorOnPrimary`
+- `colorOnSurface`
+- `colorOnSurfaceVariant`
+- `colorError`
+- `colorOutline`
+
+Это позволяет одному и тому же JSON корректно работать в светлой и тёмной теме.
+
+Иконки и placeholders должны существовать на клиенте как локальные ресурсы:
+
+- `ic_arrow_back`
+- `ic_favorite_border`
+- `ic_favorite_filled`
+- `poster_placeholder_branded`
+
+## Публикация
+
+Для загрузки статических файлов в Echo API используется:
+
+- `publish-bdui.ps1`
