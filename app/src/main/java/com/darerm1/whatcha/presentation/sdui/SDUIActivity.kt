@@ -87,10 +87,27 @@ class SDUIActivity : AppCompatActivity() {
         }
 
         override fun onRatingChanged(rating: Float) {
-            showSnackbar(getString(R.string.sdui_rating_saved, rating.toInt()))
+            val movieId = findMovieId()
+            if (movieId != null) {
+                when (useCase.updateRating(movieId, rating)) {
+                    is Result.Success -> showSnackbar(getString(R.string.sdui_rating_saved, rating.toInt()))
+                    is Result.Error -> showSnackbar(getString(R.string.sdui_add_favorite_error))
+                }
+            } else {
+                showSnackbar(getString(R.string.sdui_rating_saved, rating.toInt()))
+            }
         }
 
         override fun onStatusChanged(newStatus: String, chipText: String) {
+            val movieId = findMovieId()
+            if (movieId != null) {
+                when (newStatus) {
+                    "planned" -> useCase.markAsPlanned(movieId)
+                    "completed" -> useCase.markAsCompleted(movieId)
+                    "abandoned" -> useCase.markAsAbandoned(movieId)
+                    "not_set" -> useCase.markAsNotSet(movieId)
+                }
+            }
             showSnackbar(getString(R.string.sdui_status_updated, chipText))
         }
     }
@@ -145,6 +162,17 @@ class SDUIActivity : AppCompatActivity() {
         }
     }
 
+    private fun findMovieId(): Long? {
+        val state = viewModel.state.value
+        if (state is SDUIState.Content) {
+            return state.items
+                .filterIsInstance<SDUIItem.MovieCardItem>()
+                .firstOrNull()
+                ?.movieId
+        }
+        return null
+    }
+
     private fun showSnackbar(message: String) {
         Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
     }
@@ -161,7 +189,7 @@ class SDUIActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_URL = "sdui_url"
-        const val RECOMMENDATION_URL = "https://gist.githubusercontent.com/MARSSIII/60d00c9dd56d0c3d1faacb7f251b25b6/raw/gistfile1.txt"
+        const val RECOMMENDATION_URL = "https://alfaitmo.ru/server/echo/marssiii/whatcha/sdui/recommendation"
 
         fun newIntent(context: Context, url: String): Intent {
             return Intent(context, SDUIActivity::class.java).apply {
