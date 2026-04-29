@@ -29,6 +29,9 @@
         <activity
             android:name=".presentation.activities.ProfileActivity"
             android:exported="false" />
+        <activity
+            android:name=".presentation.sdui.SDUIActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

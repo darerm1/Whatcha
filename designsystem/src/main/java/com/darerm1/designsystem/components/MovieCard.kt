@@ -3,6 +3,7 @@ package com.darerm1.designsystem.components
 import android.content.Context
 import android.util.AttributeSet
 import android.view.LayoutInflater
+import android.view.View
 import android.widget.FrameLayout
 import coil.dispose
 import coil.load
@@ -52,6 +53,12 @@ class MovieCard @JvmOverloads constructor(
         }
 
     var onFavoriteClickListener: ((Boolean) -> Unit)? = null
+
+    var showFavoriteButton: Boolean = true
+        set(value) {
+            field = value
+            binding.btnFavorite.visibility = if (value) View.VISIBLE else View.GONE
+        }
 
     var placeholderRes: Int = R.drawable.ic_movie_placeholder
         set(value) {

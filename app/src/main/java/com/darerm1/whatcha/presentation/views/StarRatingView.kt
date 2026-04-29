@@ -22,13 +22,17 @@ class StarRatingView @JvmOverloads constructor(
 
     var onRatingChange: ((Float) -> Unit)? = null
 
+    private var suppressCallback = false
+
     var rating: Float = 0f
         set(value) {
             val normalized = normalize(value)
             if (field == normalized) return
             field = normalized
             invalidate()
-            onRatingChange?.invoke(field)
+            if (!suppressCallback) {
+                onRatingChange?.invoke(field)
+            }
         }
 
     private val filledStar: Drawable = requireNotNull(
@@ -92,13 +96,17 @@ class StarRatingView @JvmOverloads constructor(
 
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN,
-            MotionEvent.ACTION_MOVE,
+            MotionEvent.ACTION_MOVE -> {
+                parent?.requestDisallowInterceptTouchEvent(true)
+                suppressCallback = true
+                rating = touchToRating(event.x)
+                suppressCallback = false
+                return true
+            }
             MotionEvent.ACTION_UP -> {
                 parent?.requestDisallowInterceptTouchEvent(true)
                 rating = touchToRating(event.x)
-                if (event.actionMasked == MotionEvent.ACTION_UP) {
-                    performClick()
-                }
+                performClick()
                 return true
             }
         }

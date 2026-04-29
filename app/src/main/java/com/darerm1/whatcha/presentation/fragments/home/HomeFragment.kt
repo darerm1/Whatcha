@@ -24,6 +24,7 @@ import com.darerm1.whatcha.presentation.fragments.home.viewmodel.HomeViewModelFa
 import com.darerm1.whatcha.presentation.utils.ErrorHandler
 import kotlinx.coroutines.launch
 import com.darerm1.whatcha.presentation.fragments.home.adapter.MovieCardAdapter
+import com.darerm1.whatcha.presentation.sdui.SDUIActivity
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 
@@ -66,6 +67,10 @@ class HomeFragment : Fragment() {
         setupRecyclerView()
         setupSearchInput()
         setupErrorView()
+
+        binding.recommendationCard.setOnClickListener {
+            startActivity(SDUIActivity.newIntent(requireContext(), SDUIActivity.RECOMMENDATION_URL))
+        }
 
         lifecycleScope.launch {
             viewModel.state.collect { state ->

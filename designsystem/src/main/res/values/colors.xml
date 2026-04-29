@@ -9,4 +9,9 @@
     <color name="ds_gray">#9E9E9E</color>
     <color name="ds_error">#B00020</color>
     <color name="ds_filled_heart">#C7475F</color>
+
+    <color name="ds_status_planned">#1976D2</color>
+    <color name="ds_status_completed">#388E3C</color>
+    <color name="ds_status_abandoned">#D32F2F</color>
+    <color name="ds_status_not_set">#757575</color>
 </resources>

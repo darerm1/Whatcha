@@ -1,0 +1,70 @@
+{
+  "screenId": "movie_detail_sdui",
+  "version": 1,
+  "components": [
+    {
+      "type": "movie_card",
+      "id": "movie_interstellar",
+      "properties": {
+        "title": "Интерстеллар",
+        "yearGenre": "2014 \u2022 фантастика, драма",
+        "posterUrl": null,
+        "isFavorite": false,
+        "movieId": 258687
+      },
+      "analytics": {
+        "id": "movie_interstellar_fav",
+        "action": "favorite_toggled"
+      }
+    },
+    {
+      "type": "rating_bar",
+      "id": "user_rating",
+      "properties": {
+        "rating": 8.5,
+        "editable": true
+      },
+      "analytics": {
+        "id": "user_rating_change",
+        "action": "rating_change"
+      }
+    },
+    {
+      "type": "status_chip",
+      "id": "watch_status",
+      "properties": {
+        "status": "not_set",
+        "chipText": "Не установлен"
+      },
+      "analytics": {
+        "id": "watch_status_click",
+        "action": "status_change"
+      }
+    },
+    {
+      "type": "primary_button",
+      "id": "add_to_favorites",
+      "properties": {
+        "buttonText": "Добавить в избранное",
+        "action": "add_favorite"
+      },
+      "analytics": {
+        "id": "add_to_favorites_click",
+        "action": "click"
+      }
+    },
+    {
+      "type": "secondary_button",
+      "id": "share_movie",
+      "properties": {
+        "buttonText": "Поделиться",
+        "action": "share",
+        "shareText": "Рекомендую посмотреть: Интерстеллар (2014) — фантастика, драма"
+      },
+      "analytics": {
+        "id": "share_movie_click",
+        "action": "click"
+      }
+    }
+  ]
+}
